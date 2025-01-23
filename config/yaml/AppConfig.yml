@@ -1,0 +1,12 @@
+app:
+  name: note_app_server_login&register
+  port: :8081
+mysql:
+  #  url
+  dsn: "root:123@tcp(localhost:8077)/note_app_db?charset=utf8mb4&parseTime=True&loc=Local"
+  # 最大并发连接数
+  maxIdleConns: 10
+  # 最大同时打开的连接数
+  maxOpenConns: 100
+  # 最大生命周期
+  connMaxLifetime: 1h
