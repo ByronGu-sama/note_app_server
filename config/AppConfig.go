@@ -16,6 +16,11 @@ type AppConfig struct {
 		MaxOpenConns    int
 		ConnMaxLifetime string
 	}
+	Oss struct {
+		BucketName string
+		EndPoint   string
+		region     string
+	}
 }
 
 var AC *AppConfig
@@ -33,4 +38,5 @@ func InitAppConfig() {
 		log.Fatalf("unmarshal config failed, err:%v\n", err)
 	}
 	InitMysqlConfig()
+	InitOssConfig()
 }

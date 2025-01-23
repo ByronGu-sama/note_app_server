@@ -10,3 +10,7 @@ mysql:
   maxOpenConns: 100
   # 最大生命周期
   connMaxLifetime: 1h
+oss:
+  bucketName: "note-app-oss-server"
+  endPoint: "oss-cn-shanghai.aliyuncs.com"
+  region: "cn-shanghai"
