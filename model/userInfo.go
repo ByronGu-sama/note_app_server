@@ -4,7 +4,7 @@ import "time"
 
 type UserInfo struct {
 	Uid       uint      `json:"uid" gorm:"column:uid; default:null"`
-	Username  string    `json:"username" gorm:"column:username; default:null"`
+	Username  string    `json:"username" gorm:"column:username; default:momo"`
 	Age       uint      `json:"age" gorm:"column:age; default:null"`
 	AvatarUrl string    `json:"avatarUrl" gorm:"column:avatarUrl; default:null"`
 	Birth     time.Time `json:"birth" gorm:"column:birth; default:null"`

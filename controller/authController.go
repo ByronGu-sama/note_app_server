@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"note_app_server1/global"
 	"note_app_server1/model"
+	"note_app_server1/repository"
 )
 
 func Register(ctx *gin.Context) {
@@ -19,8 +20,7 @@ func Register(ctx *gin.Context) {
 	}
 
 	//检查用户名或其他唯一字段是否已存在
-	var existedUser model.UserLogin
-	if err := global.Db.Where("phone = ?", user.Phone).First(&existedUser).Error; err == nil {
+	if _, err := repository.GetUserLoginInfoByPhone(user.Phone); err == nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "该手机号已注册",
 		})
@@ -44,10 +44,7 @@ func Register(ctx *gin.Context) {
 	}
 	user.Password = string(hashedPassword)
 
-	// 创建jwt
-	//
-
-	// 使用事务创建用户登录信息和详细信息
+	// 使用事务创建用户登录信息
 	tx := global.Db.Begin()
 	if err := tx.Create(&user).Error; err != nil {
 		tx.Rollback()
@@ -57,8 +54,10 @@ func Register(ctx *gin.Context) {
 		return
 	}
 	tx.Commit()
+
 	tx = global.Db.Begin()
-	if err := tx.Where("phone = ?", user.Phone).First(&user).Error; err != nil {
+	newUser, err := repository.GetUserLoginInfoByPhone(user.Phone) //获取系统生成的用户uid
+	if err != nil {
 		tx.Rollback()
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Failed to create user",
@@ -66,8 +65,10 @@ func Register(ctx *gin.Context) {
 		return
 	}
 	var userInfo model.UserInfo
-	userInfo.Uid = user.Uid
-	userInfo.Username = "momo"
+	var userCreationInfo model.UserCreationInfo
+	userInfo.Uid = newUser.Uid
+	userCreationInfo.Uid = newUser.Uid
+	// 创建用户详细信息
 	if err := tx.Create(&userInfo).Error; err != nil {
 		tx.Rollback()
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -75,7 +76,20 @@ func Register(ctx *gin.Context) {
 		})
 		return
 	}
+	// 创建用户创造者信息
+	if err := tx.Create(&userCreationInfo).Error; err != nil {
+		tx.Rollback()
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to create user creation information",
+		})
+		return
+	}
 	tx.Commit()
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"message": "注册成功",
+	})
 }
 
 func Login(ctx *gin.Context) {
@@ -88,9 +102,9 @@ func Login(ctx *gin.Context) {
 		return
 	}
 
-	var existedUser model.UserLogin
+	//var existedUser model.UserLogin
 	if user.Phone != "" {
-		if err := global.Db.Where("phone = ?", user.Phone).First(&existedUser).Error; err != nil {
+		if existedUser, err := repository.GetUserLoginInfoByPhone(user.Phone); err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"code":    http.StatusBadRequest,
 				"message": "用户未注册",
@@ -108,7 +122,7 @@ func Login(ctx *gin.Context) {
 		}
 	}
 	if user.Email != "" {
-		if err := global.Db.Where("email = ?", user.Email).First(&existedUser).Error; err != nil {
+		if existedUser, err := repository.GetUserLoginInfoByEmail(user.Email); err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
 				"code":    http.StatusBadRequest,
 				"message": "用户未注册",
@@ -130,7 +144,7 @@ func Login(ctx *gin.Context) {
 func GetUserLoginInfo(uid uint, ctx *gin.Context) {
 	var userInfo *model.UserInfo
 	var userCreationInfo *model.UserCreationInfo
-	if temp, err := getUserInfo(uid); err != nil {
+	if temp, err := repository.GetUserInfo(uid); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
 			"message": "登陆失败",
@@ -139,7 +153,7 @@ func GetUserLoginInfo(uid uint, ctx *gin.Context) {
 	} else {
 		userInfo = temp
 	}
-	if temp, err := getUserCreationInfo(uid); err != nil {
+	if temp, err := repository.GetUserCreationInfo(uid); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"code":    http.StatusInternalServerError,
 			"message": "登陆失败",
