@@ -77,3 +77,84 @@ func Register(ctx *gin.Context) {
 	}
 	tx.Commit()
 }
+
+func Login(ctx *gin.Context) {
+	var user model.UserLogin
+	if err := ctx.ShouldBind(&user); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "登陆失败",
+		})
+		return
+	}
+
+	var existedUser model.UserLogin
+	if user.Phone != "" {
+		if err := global.Db.Where("phone = ?", user.Phone).First(&existedUser).Error; err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"code":    http.StatusBadRequest,
+				"message": "用户未注册",
+			})
+			return
+		} else {
+			if err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(user.Password)); err != nil {
+				ctx.JSON(http.StatusBadRequest, gin.H{
+					"code":    http.StatusBadRequest,
+					"message": "手机号/邮箱或密码错误",
+				})
+				return
+			}
+			GetUserLoginInfo(existedUser.Uid, ctx)
+		}
+	}
+	if user.Email != "" {
+		if err := global.Db.Where("email = ?", user.Email).First(&existedUser).Error; err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"code":    http.StatusBadRequest,
+				"message": "用户未注册",
+			})
+			return
+		} else {
+			if err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(user.Password)); err != nil {
+				ctx.JSON(http.StatusBadRequest, gin.H{
+					"code":    http.StatusBadRequest,
+					"message": "手机号/邮箱或密码错误",
+				})
+				return
+			}
+			GetUserLoginInfo(existedUser.Uid, ctx)
+		}
+	}
+}
+
+func GetUserLoginInfo(uid uint, ctx *gin.Context) {
+	var userInfo *model.UserInfo
+	var userCreationInfo *model.UserCreationInfo
+	if temp, err := getUserInfo(uid); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "登陆失败",
+		})
+		return
+	} else {
+		userInfo = temp
+	}
+	if temp, err := getUserCreationInfo(uid); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "登陆失败",
+		})
+		return
+	} else {
+		userCreationInfo = temp
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"message": "登陆成功",
+		"data": gin.H{
+			"userInfo":         userInfo,
+			"userCreationInfo": userCreationInfo,
+		},
+	})
+}

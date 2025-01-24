@@ -13,7 +13,7 @@ func SetupRouter() *gin.Engine {
 			controller.Register(context)
 		})
 		auth.POST("/login", func(context *gin.Context) {
-
+			controller.Login(context)
 		})
 	}
 	return r
