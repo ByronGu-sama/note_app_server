@@ -10,6 +10,7 @@ var client = global.OssClient
 
 // CreateBucket 创建bucket
 func CreateBucket(bucketName string) error {
+	checkClientIfNil()
 	err := client.CreateBucket(bucketName)
 	if err != nil {
 		return err
@@ -29,6 +30,7 @@ func CreateBucket(bucketName string) error {
 //
 // 如果成功，记录成功日志；否则，返回错误。
 func UploadFile(bucketName, objectName, localFileName string) error {
+	checkClientIfNil()
 	// 获取存储空间。
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
@@ -56,6 +58,7 @@ func UploadFile(bucketName, objectName, localFileName string) error {
 //
 // 如果成功，记录成功日志；否则，返回错误。
 func DownloadFile(bucketName, objectName, downloadedFileName string) error {
+	checkClientIfNil()
 	// 获取存储空间。
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
@@ -81,6 +84,7 @@ func DownloadFile(bucketName, objectName, downloadedFileName string) error {
 //
 // 如果成功，打印所有对象；否则，返回错误。
 func ListObjects(bucketName string) error {
+	checkClientIfNil()
 	// 获取存储空间。
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
@@ -117,6 +121,7 @@ func ListObjects(bucketName string) error {
 //
 // 如果成功，记录成功日志；否则，返回错误。
 func DeleteObject(bucketName, objectName string) error {
+	checkClientIfNil()
 	// 获取存储空间。
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
@@ -132,4 +137,10 @@ func DeleteObject(bucketName, objectName string) error {
 	// 文件删除成功后，记录日志。
 	log.Printf("Object deleted successfully: %s/%s", bucketName, objectName)
 	return nil
+}
+
+func checkClientIfNil() {
+	if client == nil {
+		client = global.OssClient
+	}
 }

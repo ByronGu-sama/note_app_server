@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/spf13/viper"
 	"log"
+	"sync"
 )
 
 type AppConfig struct {
@@ -19,7 +20,7 @@ type AppConfig struct {
 	Oss struct {
 		BucketName string
 		EndPoint   string
-		region     string
+		Region     string
 	}
 }
 
@@ -27,16 +28,19 @@ var AC *AppConfig
 
 // InitAppConfig 读取config.yml文件
 func InitAppConfig() {
-	viper.SetConfigName("AppConfig")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./config/yaml")
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("read config failed, err:%v\n", err)
-	}
-	AC = &AppConfig{}
-	if err := viper.Unmarshal(AC); err != nil {
-		log.Fatalf("unmarshal config failed, err:%v\n", err)
-	}
-	InitMysqlConfig()
-	InitOssConfig()
+	once := sync.Once{}
+	once.Do(func() {
+		viper.SetConfigName("AppConfig")
+		viper.SetConfigType("yaml")
+		viper.AddConfigPath("./config/yaml")
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalf("read config failed, err:%v\n", err)
+		}
+		AC = &AppConfig{}
+		if err := viper.Unmarshal(AC); err != nil {
+			log.Fatalf("unmarshal config failed, err:%v\n", err)
+		}
+		InitMysqlConfig()
+		InitOssConfig()
+	})
 }

@@ -10,7 +10,7 @@ import (
 func InitOssConfig() {
 	bucketName := AC.Oss.BucketName
 	endPoint := AC.Oss.EndPoint
-	region := AC.Oss.region
+	region := AC.Oss.Region
 
 	if endPoint == "" || bucketName == "" {
 		log.Fatal("Please set yourEndpoint and bucketName.")
@@ -31,5 +31,8 @@ func InitOssConfig() {
 	if err != nil {
 		log.Fatal("new oss client failed.")
 	}
+	// 输出客户端信息。
+	log.Printf("Client: %#v\n", client)
+
 	global.OssClient = client
 }
