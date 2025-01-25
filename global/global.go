@@ -11,4 +11,5 @@ var (
 	TokenRdb   *redis.Client // TokenRdb token redis
 	CaptchaRdb *redis.Client // CaptchaRdb 验证码redis
 	OssClient  *oss.Client   // OssClient oss客户端
+	JWTKey     []byte        // JWTKey jwt密钥
 )

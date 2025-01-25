@@ -3,6 +3,7 @@ package repository
 import (
 	"note_app_server1/global"
 	"note_app_server1/model"
+	"time"
 )
 
 // GetUserInfo 获取用户基本信息
@@ -40,4 +41,14 @@ func GetUserLoginInfoByEmail(email string) (*model.UserLogin, error) {
 		return nil, err
 	}
 	return existedUser, nil
+}
+
+// UpdateLoginFailedAt 记录上次登陆失败的时间
+func UpdateLoginFailedAt(uid uint) {
+	global.Db.Model(&model.UserLogin{}).Where("uid = ?", uid).Update("lastLoginFailedAt", time.Now())
+}
+
+// UpdateLoginSuccessAt 记录上次登陆成功的时间
+func UpdateLoginSuccessAt(uid uint) {
+	global.Db.Model(&model.UserLogin{}).Where("uid = ?", uid).Update("lastLoginSuccessAt", time.Now())
 }

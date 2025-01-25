@@ -103,7 +103,6 @@ func Login(ctx *gin.Context) {
 		return
 	}
 
-	//var existedUser model.UserLogin
 	if user.Phone != "" {
 		if existedUser, err := repository.GetUserLoginInfoByPhone(user.Phone); err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
@@ -116,6 +115,7 @@ func Login(ctx *gin.Context) {
 				return
 			}
 			if err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(user.Password)); err != nil {
+				repository.UpdateLoginFailedAt(existedUser.Uid)
 				ctx.JSON(http.StatusBadRequest, gin.H{
 					"code":    http.StatusBadRequest,
 					"message": "手机号/邮箱或密码错误",
@@ -137,6 +137,7 @@ func Login(ctx *gin.Context) {
 				return
 			}
 			if err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(user.Password)); err != nil {
+				repository.UpdateLoginFailedAt(existedUser.Uid)
 				ctx.JSON(http.StatusBadRequest, gin.H{
 					"code":    http.StatusBadRequest,
 					"message": "手机号/邮箱或密码错误",

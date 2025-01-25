@@ -1,8 +1,10 @@
 package config
 
 import (
+	"crypto/rand"
 	"github.com/spf13/viper"
 	"log"
+	"note_app_server1/global"
 	"note_app_server1/model"
 	"sync"
 )
@@ -25,7 +27,7 @@ func InitAppConfig() {
 	var once sync.Once
 	var wg sync.WaitGroup
 	once.Do(func() {
-		wg.Add(3)
+		wg.Add(4)
 		go func() {
 			defer wg.Done()
 			InitMysqlConfig()
@@ -37,6 +39,15 @@ func InitAppConfig() {
 		go func() {
 			defer wg.Done()
 			InitRedisConfig()
+		}()
+		go func() {
+			defer wg.Done()
+			var jwtKey = make([]byte, 32)
+			if _, err := rand.Read(jwtKey); err != nil {
+				log.Fatalf("JWTKey inition failed, err:%v\n", err)
+			} else {
+				global.JWTKey = jwtKey
+			}
 		}()
 	})
 	wg.Wait()

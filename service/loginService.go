@@ -1,13 +1,15 @@
 package service
 
 import (
-	"crypto/rand"
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
+	"note_app_server1/global"
 	"note_app_server1/model"
 	"note_app_server1/repository"
+	"strconv"
 	"time"
 )
 
@@ -34,9 +36,28 @@ func GetUserLoginInfo(uid uint, ctx *gin.Context) {
 		userCreationInfo = temp
 	}
 
+	// 生成jwt并保存
+	token, err := GenerateJWT(userInfo)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "登陆失败",
+		})
+	}
+
+	rCtx := context.Background()
+	err = global.TokenRdb.Set(rCtx, strconv.Itoa(int(userInfo.Uid)), token, time.Hour*24*30).Err()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "登陆失败",
+		})
+	}
+	repository.UpdateLoginSuccessAt(userInfo.Uid)
 	ctx.JSON(http.StatusOK, gin.H{
 		"code":    http.StatusOK,
 		"message": "登陆成功",
+		"token":   token,
 		"data": gin.H{
 			"userInfo":         userInfo,
 			"userCreationInfo": userCreationInfo,
@@ -63,19 +84,29 @@ func CheckAccountStatus(status uint, ctx *gin.Context) error {
 	return nil
 }
 
-// GenerateJWT 用户登录后生成JWT
-func GenerateJWT(user *model.UserLogin) (string, error) {
-	key := make([]byte, 32)
-	if _, err := rand.Read(key); err != nil {
-		return "", err
-	}
+// GenerateJWT 用户登录后生成JWT 30天过期
+func GenerateJWT(user *model.UserInfo) (string, error) {
 	mapClaims := jwt.MapClaims{
 		"iss": "note_app",
 		"sub": "token",
-		"aud": user.Uid,
+		"uid": user.Uid,
 		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
 		"iat": time.Now().Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, mapClaims)
-	return token.SignedString(key)
+	return token.SignedString(global.JWTKey)
+}
+
+// ParseJWT 解析JWT
+func ParseJWT(tokenString string) (interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return global.JWTKey, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+	return token.Claims, nil
 }
