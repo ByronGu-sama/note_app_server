@@ -15,6 +15,9 @@ func SetupRouter() *gin.Engine {
 		auth.POST("/login", func(context *gin.Context) {
 			controller.Login(context)
 		})
+		auth.POST("/logout", func(context *gin.Context) {
+			controller.Logout(context)
+		})
 	}
 	return r
 }

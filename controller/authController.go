@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -8,8 +9,10 @@ import (
 	"note_app_server1/model"
 	"note_app_server1/repository"
 	"note_app_server1/service"
+	"strconv"
 )
 
+// Register 注册
 func Register(ctx *gin.Context) {
 	var user model.UserLogin
 	// 检查必要字段是否缺失
@@ -93,6 +96,7 @@ func Register(ctx *gin.Context) {
 	})
 }
 
+// Login 登陆
 func Login(ctx *gin.Context) {
 	var user model.UserLogin
 	if err := ctx.ShouldBind(&user); err != nil {
@@ -147,4 +151,47 @@ func Login(ctx *gin.Context) {
 			service.GetUserLoginInfo(existedUser.Uid, ctx)
 		}
 	}
+}
+
+// Logout 登出
+func Logout(ctx *gin.Context) {
+	var user model.UserInfo
+	token := ctx.GetHeader("token")
+
+	if token == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "无权限",
+		})
+		return
+	}
+
+	if err := ctx.ShouldBind(&user); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code":    http.StatusInternalServerError,
+			"message": "校验失败",
+		})
+		return
+	}
+
+	if _, err := service.ParseJWT(token); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "无权限",
+		})
+	}
+
+	rCtx := context.Background()
+	if err := global.TokenRdb.Del(rCtx, strconv.Itoa(int(user.Uid))).Err(); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"message": "退出登录失败",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"message": "已退出登录",
+	})
 }
