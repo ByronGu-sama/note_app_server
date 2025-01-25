@@ -32,7 +32,6 @@ func InitOssConfig() {
 		log.Fatal("new oss client failed.")
 	}
 	// 输出客户端信息。
-	log.Printf("Client: %#v\n", client)
-
+	log.Printf("Oss客户端信息: %#v\n", client)
 	global.OssClient = client
 }

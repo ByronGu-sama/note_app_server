@@ -7,6 +7,7 @@ import (
 	"note_app_server1/global"
 	"note_app_server1/model"
 	"note_app_server1/repository"
+	"note_app_server1/service"
 )
 
 func Register(ctx *gin.Context) {
@@ -111,6 +112,9 @@ func Login(ctx *gin.Context) {
 			})
 			return
 		} else {
+			if err := service.CheckAccountStatus(existedUser.AccountStatus, ctx); err != nil {
+				return
+			}
 			if err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(user.Password)); err != nil {
 				ctx.JSON(http.StatusBadRequest, gin.H{
 					"code":    http.StatusBadRequest,
@@ -118,7 +122,7 @@ func Login(ctx *gin.Context) {
 				})
 				return
 			}
-			GetUserLoginInfo(existedUser.Uid, ctx)
+			service.GetUserLoginInfo(existedUser.Uid, ctx)
 		}
 	}
 	if user.Email != "" {
@@ -129,6 +133,9 @@ func Login(ctx *gin.Context) {
 			})
 			return
 		} else {
+			if err := service.CheckAccountStatus(existedUser.AccountStatus, ctx); err != nil {
+				return
+			}
 			if err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(user.Password)); err != nil {
 				ctx.JSON(http.StatusBadRequest, gin.H{
 					"code":    http.StatusBadRequest,
@@ -136,39 +143,7 @@ func Login(ctx *gin.Context) {
 				})
 				return
 			}
-			GetUserLoginInfo(existedUser.Uid, ctx)
+			service.GetUserLoginInfo(existedUser.Uid, ctx)
 		}
 	}
-}
-
-func GetUserLoginInfo(uid uint, ctx *gin.Context) {
-	var userInfo *model.UserInfo
-	var userCreationInfo *model.UserCreationInfo
-	if temp, err := repository.GetUserInfo(uid); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": "登陆失败",
-		})
-		return
-	} else {
-		userInfo = temp
-	}
-	if temp, err := repository.GetUserCreationInfo(uid); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": "登陆失败",
-		})
-		return
-	} else {
-		userCreationInfo = temp
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":    http.StatusOK,
-		"message": "登陆成功",
-		"data": gin.H{
-			"userInfo":         userInfo,
-			"userCreationInfo": userCreationInfo,
-		},
-	})
 }

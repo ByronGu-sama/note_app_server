@@ -1,0 +1,35 @@
+package model
+
+import "time"
+
+type AppConfig struct {
+	App struct {
+		Name string
+		Port string
+	}
+	Mysql struct {
+		Dsn             string
+		MaxIdleConns    int
+		MaxOpenConns    int
+		ConnMaxLifetime string
+	}
+	Redis struct {
+		TokenDB   int
+		CaptchaDB int
+		Host      string
+		Port      string
+		Password  string
+		Timeout   time.Duration
+		Pool      struct {
+			MaxActive int
+			MaxIdle   int
+			MinIdle   int
+			MaxWait   time.Duration
+		}
+	}
+	Oss struct {
+		BucketName string
+		EndPoint   string
+		Region     string
+	}
+}
