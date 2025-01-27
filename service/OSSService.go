@@ -1,7 +1,8 @@
-package utils
+package service
 
 import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"io"
 	"log"
 	"note_app_server1/global"
 )
@@ -48,32 +49,25 @@ func UploadFile(bucketName, objectName, localFileName string) error {
 	return nil
 }
 
-// DownloadFile 用于从OSS存储桶下载一个文件到本地路径。
-// 参数：
+// GetOssObject 用于从OSS存储桶获取文件流。
 //
 //	bucketName - 存储空间名称。
 //	objectName - Object完整路径，完整路径中不能包含Bucket名称。
-//	downloadedFileName - 本地文件的完整路径。
-//	endpoint - Bucket对应的Endpoint。
-//
-// 如果成功，记录成功日志；否则，返回错误。
-func DownloadFile(bucketName, objectName, downloadedFileName string) error {
+func GetOssObject(bucketName, objectName string) (io.ReadCloser, error) {
 	checkClientIfNil()
 	// 获取存储空间。
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// 下载文件。
-	err = bucket.GetObjectToFile(objectName, downloadedFileName)
-	if err != nil {
-		return err
+	// 获取输入流
+	object, err1 := bucket.GetObject(objectName)
+	if err1 != nil {
+		return nil, err1
+	} else {
+		return object, nil
 	}
-
-	// 文件下载成功后，记录日志。
-	log.Printf("File downloaded successfully to %s", downloadedFileName)
-	return nil
 }
 
 // ListObjects 用于列举OSS存储空间中的所有对象。

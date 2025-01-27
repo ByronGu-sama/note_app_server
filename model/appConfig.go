@@ -5,6 +5,7 @@ import "time"
 type AppConfig struct {
 	App struct {
 		Name string
+		Host string
 		Port string
 	}
 	Mysql struct {

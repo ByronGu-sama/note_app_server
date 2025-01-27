@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"log"
 	"net/http"
 	"note_app_server1/global"
 	"note_app_server1/model"
@@ -25,6 +27,7 @@ func GetUserLoginInfo(uid uint, ctx *gin.Context) {
 		return
 	} else {
 		userInfo = temp
+		userInfo.AvatarUrl = "http://localhost:8081/avatar/" + userInfo.AvatarUrl
 	}
 	if temp, err := repository.GetUserCreationInfo(uid); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -109,4 +112,14 @@ func ParseJWT(tokenString string) (interface{}, error) {
 		return nil, fmt.Errorf("invalid token")
 	}
 	return token.Claims, nil
+}
+
+// CreateJWTKey 生成JWT密钥
+func CreateJWTKey() {
+	var jwtKey = make([]byte, 32)
+	if _, err := rand.Read(jwtKey); err != nil {
+		log.Fatalf("Failed to generate JWT Key: %v", err)
+	} else {
+		global.JWTKey = jwtKey
+	}
 }

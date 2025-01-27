@@ -1,5 +1,6 @@
 app:
   name: note_app_server_login&register
+  host: localhost
   port: :8081
 mysql:
   #  url

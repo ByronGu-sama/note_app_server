@@ -1,11 +1,10 @@
 package config
 
 import (
-	"crypto/rand"
 	"github.com/spf13/viper"
 	"log"
-	"note_app_server1/global"
 	"note_app_server1/model"
+	"note_app_server1/service"
 	"sync"
 )
 
@@ -42,12 +41,7 @@ func InitAppConfig() {
 		}()
 		go func() {
 			defer wg.Done()
-			var jwtKey = make([]byte, 32)
-			if _, err := rand.Read(jwtKey); err != nil {
-				log.Fatalf("JWTKey inition failed, err:%v\n", err)
-			} else {
-				global.JWTKey = jwtKey
-			}
+			service.CreateJWTKey()
 		}()
 	})
 	wg.Wait()
