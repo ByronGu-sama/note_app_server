@@ -9,6 +9,7 @@ import (
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.CorsMiddleware())
+
 	auth := r.Group("/auth")
 	{
 		auth.POST("/register", func(context *gin.Context) {
@@ -21,10 +22,15 @@ func SetupRouter() *gin.Engine {
 			controller.Logout(context)
 		})
 	}
-	avatar := r.Group("/avatar")
+
+	userInfo := r.Group("/userInfo")
+	userInfo.Use(middleware.TokenVerificationMiddleware())
 	{
-		avatar.GET("/:fileName", func(context *gin.Context) {
+		userInfo.GET("/avatar/:fileName", func(context *gin.Context) {
 			controller.GetAvatarUrl(context)
+		})
+		userInfo.GET("/info", func(context *gin.Context) {
+			controller.GetUserInfo(context)
 		})
 	}
 	return r

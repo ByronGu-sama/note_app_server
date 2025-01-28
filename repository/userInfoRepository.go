@@ -8,20 +8,20 @@ import (
 
 // GetUserInfo 获取用户基本信息
 func GetUserInfo(uid uint) (*model.UserInfo, error) {
-	var user model.UserInfo
+	var user *model.UserInfo
 	if err := global.Db.Where("uid = ?", uid).First(&user).Error; err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return user, nil
 }
 
 // GetUserCreationInfo 获取用户创作者信息
 func GetUserCreationInfo(uid uint) (*model.UserCreationInfo, error) {
-	var info model.UserCreationInfo
+	var info *model.UserCreationInfo
 	if err := global.Db.Where("uid = ?", uid).First(&info).Error; err != nil {
 		return nil, err
 	} else {
-		return &info, nil
+		return info, nil
 	}
 }
 
@@ -29,15 +29,6 @@ func GetUserCreationInfo(uid uint) (*model.UserCreationInfo, error) {
 func GetUserLoginInfoByPhone(phone string) (*model.UserLogin, error) {
 	var existedUser *model.UserLogin
 	if err := global.Db.Where("phone = ?", phone).First(&existedUser).Error; err != nil {
-		return nil, err
-	}
-	return existedUser, nil
-}
-
-// GetUserLoginInfoByEmail 通过邮箱获取用户信息
-func GetUserLoginInfoByEmail(email string) (*model.UserLogin, error) {
-	var existedUser *model.UserLogin
-	if err := global.Db.Where("email = ?", email).First(&existedUser).Error; err != nil {
 		return nil, err
 	}
 	return existedUser, nil

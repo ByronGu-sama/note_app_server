@@ -9,6 +9,7 @@ type UserInfo struct {
 	AvatarUrl string    `json:"avatarUrl" gorm:"column:avatarUrl; default:null"`
 	Birth     time.Time `json:"birth" gorm:"column:birth; default:null"`
 	Gender    uint      `json:"gender" gorm:"column:gender; default:null"`
+	Signature string    `json:"signature" gorm:"column:signature; default:null"`
 	Address   string    `json:"address" gorm:"column:address; default:null"`
 	Language  string    `json:"language" gorm:"column:language; default:null"`
 	CreateAt  time.Time `json:"createAt" gorm:"column:createAt; default:null"`
