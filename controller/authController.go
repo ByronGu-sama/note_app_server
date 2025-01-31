@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"net/http"
 	"note_app_server1/global"
 	"note_app_server1/model"
 	"note_app_server1/repository"
@@ -99,7 +100,15 @@ func Login(ctx *gin.Context) {
 				response.RespondWithStatusBadRequest(ctx, "手机号/密码错误")
 				return
 			}
-			service.GetUserLoginInfo(existedUser.Uid, ctx)
+			if token, err := service.GetToken(existedUser.Uid); err != nil {
+				response.RespondWithStatusBadRequest(ctx, "登陆失败")
+			} else {
+				ctx.JSON(http.StatusOK, gin.H{
+					"code":    http.StatusOK,
+					"message": "登陆成功",
+					"token":   token,
+				})
+			}
 		}
 	} else {
 		response.RespondWithStatusBadRequest(ctx, "手机号不能为空")
@@ -109,27 +118,21 @@ func Login(ctx *gin.Context) {
 
 // Logout 登出
 func Logout(ctx *gin.Context) {
-	var user model.UserInfo
-	token := ctx.GetHeader("token")
-
-	if token == "" {
-		response.RespondWithStatusBadRequest(ctx, "无权限")
-		return
-	}
-
-	if err := ctx.ShouldBind(&user); err != nil {
-		response.RespondWithStatusInternalServerError(ctx, "绑定失败")
-		return
-	}
-
-	if _, err := service.ParseJWT(token); err != nil {
-		response.RespondWithUnauthorized(ctx, "用户无权限")
+	tempUid, ok := ctx.Get("uid")
+	uid := tempUid.(uint)
+	if !ok {
+		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
 	}
 
 	rCtx := context.Background()
-	if err := global.TokenRdb.Del(rCtx, strconv.Itoa(int(user.Uid))).Err(); err != nil {
+	deletedCount, err := global.TokenRdb.Del(rCtx, strconv.Itoa(int(uid))).Result()
+	if err != nil {
 		response.RespondWithStatusBadRequest(ctx, "退出登录失败")
+		return
+	}
+	if deletedCount == 0 {
+		response.RespondWithStatusBadRequest(ctx, "该用户未登录或已退出")
 		return
 	}
 

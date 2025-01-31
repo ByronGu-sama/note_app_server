@@ -5,10 +5,8 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"log"
-	"net/http"
 	"note_app_server1/global"
 	"note_app_server1/model"
 	"note_app_server1/repository"
@@ -16,69 +14,21 @@ import (
 	"time"
 )
 
-// GetUserLoginInfo 获取用户相关的信息
-func GetUserLoginInfo(uid uint, ctx *gin.Context) {
-	var userInfo *model.UserInfo
-	var userCreationInfo *model.UserCreationInfo
-	if temp, err := repository.GetUserInfo(uid); err != nil {
-		ctx.JSON(http.StatusOK, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": "登陆失败",
-		})
-		return
-	} else {
-		userInfo = temp
-		userInfo.AvatarUrl = "http://localhost:8081/avatar/" + userInfo.AvatarUrl
-	}
-	if temp, err := repository.GetUserCreationInfo(uid); err != nil {
-		ctx.JSON(http.StatusOK, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": "登陆失败",
-		})
-		return
-	} else {
-		userCreationInfo = temp
-	}
-
+// GetToken 获取用户相关的信息
+func GetToken(uid uint) (string, error) {
 	// 生成jwt并保存
-	token, err := GenerateJWT(userInfo)
+	token, err := GenerateJWT(uid)
 	if err != nil {
-		ctx.JSON(http.StatusOK, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": "登陆失败",
-		})
+		return "", err
 	}
 
 	rCtx := context.Background()
-	err = global.TokenRdb.Set(rCtx, strconv.Itoa(int(userInfo.Uid)), token, time.Hour*24*30).Err()
+	err = global.TokenRdb.Set(rCtx, strconv.Itoa(int(uid)), token, time.Hour*24*30).Err()
 	if err != nil {
-		ctx.JSON(http.StatusOK, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": "登陆失败",
-		})
+		return "", err
 	}
-	repository.UpdateLoginSuccessAt(userInfo.Uid)
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":    http.StatusOK,
-		"message": "登陆成功",
-		"token":   token,
-		"data": gin.H{
-			"uid":       userInfo.Uid,
-			"username":  userInfo.Username,
-			"avatarUrl": userInfo.AvatarUrl,
-			"age":       userInfo.Age,
-			"gender":    userInfo.Gender,
-			"birth":     userInfo.Birth,
-			"signature": userInfo.Signature,
-			"address":   userInfo.Address,
-			"language":  userInfo.Language,
-			"collects":  userCreationInfo.Collects,
-			"followers": userCreationInfo.Followers,
-			"follows":   userCreationInfo.Follows,
-			"likes":     userCreationInfo.Likes,
-			"noteCount": userCreationInfo.NoteCount,
-		},
-	})
+	repository.UpdateLoginSuccessAt(uid)
+	return token, nil
 }
 
 // CheckAccountStatus 判断账户状态
@@ -93,11 +43,11 @@ func CheckAccountStatus(status uint) error {
 }
 
 // GenerateJWT 用户登录后生成JWT 30天过期
-func GenerateJWT(user *model.UserInfo) (string, error) {
+func GenerateJWT(uid uint) (string, error) {
 	mapClaims := jwt.MapClaims{
 		"Iss": "note_app",
 		"Sub": "token",
-		"Uid": user.Uid,
+		"Uid": uid,
 		"Exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
 		"Iat": time.Now().Unix(),
 	}

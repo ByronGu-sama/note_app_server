@@ -41,8 +41,8 @@ func GetAvatarUrl(ctx *gin.Context) {
 
 // GetUserInfo 获取用户详情
 func GetUserInfo(ctx *gin.Context) {
-	temp, ok := ctx.Get("uid")
-	uid := temp.(uint)
+	tempUid, ok := ctx.Get("uid")
+	uid := tempUid.(uint)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
@@ -56,7 +56,7 @@ func GetUserInfo(ctx *gin.Context) {
 		return
 	} else {
 		userInfo = temp
-		userInfo.AvatarUrl = "http://localhost:8081/userInfo/avatar/" + userInfo.AvatarUrl
+		userInfo.AvatarUrl = "http://localhost:8081/avatar/" + userInfo.AvatarUrl
 	}
 
 	if temp, err := repository.GetUserCreationInfo(uid); err != nil {
@@ -85,4 +85,26 @@ func GetUserInfo(ctx *gin.Context) {
 			"noteCount": userCreationInfo.NoteCount,
 		},
 	})
+}
+
+// UpdateUserInfo 修改用户信息
+func UpdateUserInfo(ctx *gin.Context) {
+	tempUid, ok := ctx.Get("uid")
+	uid := tempUid.(uint)
+	if !ok {
+		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
+		return
+	}
+
+	var userInfo *model.UserInfo
+	if err := ctx.ShouldBind(&userInfo); err != nil {
+		response.RespondWithStatusBadRequest(ctx, "绑定失败")
+		return
+	}
+	userInfo.Uid = uid
+	if err := repository.UpdateUserInfo(userInfo); err != nil {
+		response.RespondWithStatusBadRequest(ctx, "更新失败")
+		return
+	}
+	response.RespondWithStatusOK(ctx, "更新成功")
 }

@@ -34,6 +34,15 @@ func GetUserLoginInfoByPhone(phone string) (*model.UserLogin, error) {
 	return existedUser, nil
 }
 
+// UpdateUserInfo 更新用户信息
+func UpdateUserInfo(info *model.UserInfo) error {
+	var userInfo *model.UserInfo
+	if err := global.Db.Model(userInfo).Where("uid = ?", info.Uid).Updates(map[string]interface{}{"username": info.Username, "age": info.Age, "birth": info.Birth, "gender": info.Gender, "signature": info.Signature, "address": info.Address}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 // UpdateLoginFailedAt 记录上次登陆失败的时间
 func UpdateLoginFailedAt(uid uint) {
 	global.Db.Model(&model.UserLogin{}).Where("uid = ?", uid).Update("lastLoginFailedAt", time.Now())
