@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"log"
-	"note_app_server1/global"
+	"note_app_server/global"
 )
 
 // InitOssConfig 初始化Oss配置

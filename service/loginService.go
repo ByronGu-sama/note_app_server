@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"log"
-	"note_app_server1/global"
-	"note_app_server1/model"
-	"note_app_server1/repository"
+	"note_app_server/global"
+	"note_app_server/model"
+	"note_app_server/repository"
 	"strconv"
 	"time"
 )

@@ -2,8 +2,8 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"note_app_server1/controller"
-	"note_app_server1/middleware"
+	"note_app_server/controller"
+	"note_app_server/middleware"
 )
 
 func SetupRouter() *gin.Engine {
@@ -35,8 +35,14 @@ func SetupRouter() *gin.Engine {
 	}
 
 	avatar := r.Group("/avatar")
-	avatar.GET("/:fileName", func(context *gin.Context) {
-		controller.GetAvatarUrl(context)
-	})
+	{
+		avatar.GET("/:fileName", func(context *gin.Context) {
+			controller.GetAvatarUrl(context)
+		})
+		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/upload", func(context *gin.Context) {
+			controller.UploadAvatar(context)
+		})
+	}
+
 	return r
 }

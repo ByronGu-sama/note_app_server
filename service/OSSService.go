@@ -4,7 +4,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"io"
 	"log"
-	"note_app_server1/global"
+	"note_app_server/global"
 )
 
 var client = global.OssClient

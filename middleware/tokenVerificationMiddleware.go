@@ -5,11 +5,11 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"note_app_server1/global"
-	"note_app_server1/model"
-	"note_app_server1/repository"
-	"note_app_server1/response"
-	"note_app_server1/service"
+	"note_app_server/global"
+	"note_app_server/model"
+	"note_app_server/repository"
+	"note_app_server/response"
+	"note_app_server/service"
 	"strconv"
 )
 

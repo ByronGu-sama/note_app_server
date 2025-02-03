@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/redis/go-redis/v9"
-	"note_app_server1/global"
+	"note_app_server/global"
 	"time"
 )
 

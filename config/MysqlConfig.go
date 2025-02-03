@@ -4,8 +4,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
-	"note_app_server1/global"
-	"note_app_server1/utils"
+	"note_app_server/global"
+	"note_app_server/utils"
 	"time"
 )
 

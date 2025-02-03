@@ -3,8 +3,8 @@ package config
 import (
 	"github.com/spf13/viper"
 	"log"
-	"note_app_server1/model"
-	"note_app_server1/service"
+	"note_app_server/model"
+	"note_app_server/service"
 	"sync"
 )
 

@@ -5,11 +5,11 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"note_app_server1/config"
-	"note_app_server1/model"
-	"note_app_server1/repository"
-	"note_app_server1/response"
-	"note_app_server1/service"
+	"note_app_server/config"
+	"note_app_server/model"
+	"note_app_server/repository"
+	"note_app_server/response"
+	"note_app_server/service"
 )
 
 // GetAvatarUrl 获取代理头像地址
@@ -107,4 +107,9 @@ func UpdateUserInfo(ctx *gin.Context) {
 		return
 	}
 	response.RespondWithStatusOK(ctx, "更新成功")
+}
+
+// UploadAvatar 上传头像
+func UploadAvatar(ctx *gin.Context) {
+
 }

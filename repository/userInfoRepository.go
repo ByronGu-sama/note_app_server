@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"note_app_server1/global"
-	"note_app_server1/model"
+	"note_app_server/global"
+	"note_app_server/model"
 	"time"
 )
 

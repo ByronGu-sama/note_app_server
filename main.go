@@ -1,8 +1,8 @@
 package main
 
 import (
-	"note_app_server1/config"
-	"note_app_server1/router"
+	"note_app_server/config"
+	"note_app_server/router"
 )
 
 func main() {
