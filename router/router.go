@@ -44,6 +44,9 @@ func SetupRouter() *gin.Engine {
 	}
 
 	note := r.Group("/note")
+	note.GET("/list", func(c *gin.Context) {
+		controller.GetNoteList(c)
+	})
 	note.Use(middleware.TokenVerificationMiddleware())
 	{
 		note.POST("", func(c *gin.Context) {
@@ -52,12 +55,13 @@ func SetupRouter() *gin.Engine {
 		note.GET("/:nid", func(c *gin.Context) {
 			controller.GetNote(c)
 		})
-		note.PUT("/:nid", func(c *gin.Context) {
+		note.PUT("", func(c *gin.Context) {
 			controller.EditNote(c)
 		})
 		note.DELETE("/:nid", func(c *gin.Context) {
 			controller.DelNote(c)
 		})
+
 		note.GET("/like/:nid", func(c *gin.Context) {
 			controller.LikeNote(c)
 		})

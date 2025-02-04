@@ -1,12 +1,12 @@
 package utils
 
 import (
-	"crypto/sha256"
+	"crypto/md5"
 	"encoding/hex"
 )
 
 // EncodeName 加密名称
 func EncodeName(name string) string {
-	hash := sha256.Sum256([]byte(name))
+	hash := md5.Sum([]byte(name))
 	return hex.EncodeToString(hash[:])
 }

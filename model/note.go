@@ -11,7 +11,7 @@ type Note struct {
 	Content          string    `json:"content" gorm:"column:content"`
 	CreatedAt        time.Time `json:"createdAt" gorm:"column:created_at"`
 	UpdatedAt        time.Time `json:"updatedAt" gorm:"column:updated_at"`
-	Public           int       `json:"public" gorm:"column:public"`
+	Public           uint      `json:"public" gorm:"column:public"`
 	CategoryId       uint      `json:"categoryId" gorm:"column:category_id"`
 	Tags             string    `json:"tags" gorm:"column:tags"`
 	LikesCount       uint      `json:"likesCount" gorm:"column:likes_count"`
@@ -19,7 +19,7 @@ type Note struct {
 	CollectionsCount uint      `json:"collectionsCount" gorm:"column:collections_count"`
 	SharesCount      uint      `json:"sharesCount" gorm:"column:shares_count"`
 	ViewsCount       uint      `json:"viewsCount" gorm:"column:views_count"`
-	Status           int       `json:"status" gorm:"column:status"`
+	Status           uint      `json:"status" gorm:"column:status"`
 }
 
 func (Note) TableName() string {
