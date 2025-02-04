@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 )
 
-// EncodeFileName 加密文件名
-func EncodeFileName(fileName string) string {
-	hash := sha256.Sum256([]byte(fileName))
+// EncodeName 加密名称
+func EncodeName(name string) string {
+	hash := sha256.Sum256([]byte(name))
 	return hex.EncodeToString(hash[:])
 }

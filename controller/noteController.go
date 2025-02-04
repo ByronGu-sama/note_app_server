@@ -1,21 +1,69 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	"math/rand"
 	"net/http"
+	"note_app_server/global"
+	"note_app_server/model"
 	"note_app_server/repository"
 	"note_app_server/response"
+	"note_app_server/utils"
 	"strconv"
+	"time"
 )
 
 // NewNote 创建笔记
 func NewNote(ctx *gin.Context) {
+	var note model.Note
+	if err := ctx.ShouldBind(&note); err != nil {
+		response.RespondWithStatusBadRequest(ctx, "创建失败")
+		return
+	}
 
+	tempUid, ok := ctx.Get("uid")
+	uid := tempUid.(uint)
+	if !ok {
+		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
+		return
+	}
+	note.Uid = uid
+	noteName := utils.EncodeName(fmt.Sprintf("%d-%d-%d", time.Now().Unix(), uid, rand.Int63()))
+	note.Nid = noteName
+
+	tx := global.Db.Begin()
+	if err := tx.Create(&note).Error; err != nil {
+		tx.Rollback()
+		response.RespondWithStatusBadRequest(ctx, "创建失败")
+		return
+	}
+	userCreation := &model.UserCreationInfo{}
+	if err := tx.Model(userCreation).Where("uid = ?", uid).Update("noteCount", gorm.Expr("noteCount+ ?", 1)).Error; err != nil {
+		tx.Rollback()
+		response.RespondWithStatusBadRequest(ctx, "创建失败")
+		return
+	}
+	tx.Commit()
+	response.RespondWithStatusOK(ctx, "创建成功")
 }
 
 // DelNote 删除笔记
 func DelNote(ctx *gin.Context) {
+	tempUid, ok := ctx.Get("uid")
+	uid := tempUid.(uint)
+	if !ok {
+		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
+		return
+	}
 
+	nid := ctx.Param("nid")
+	if err := repository.DeleteNoteWithUid(nid, uid); err != nil {
+		response.RespondWithStatusBadRequest(ctx, "删除失败")
+		return
+	}
+	response.RespondWithStatusOK(ctx, "删除成功")
 }
 
 // EditNote 编辑笔记

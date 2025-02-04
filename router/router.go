@@ -9,7 +9,6 @@ import (
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.CorsMiddleware())
-
 	auth := r.Group("/auth")
 	{
 		auth.POST("/register", func(context *gin.Context) {
@@ -45,6 +44,7 @@ func SetupRouter() *gin.Engine {
 	}
 
 	note := r.Group("/note")
+	note.Use(middleware.TokenVerificationMiddleware())
 	{
 		note.POST("", func(c *gin.Context) {
 			controller.NewNote(c)
@@ -71,6 +71,5 @@ func SetupRouter() *gin.Engine {
 			controller.CancelCollectNote(c)
 		})
 	}
-
 	return r
 }
