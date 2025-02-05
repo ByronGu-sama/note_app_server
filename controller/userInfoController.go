@@ -39,6 +39,48 @@ func GetAvatarUrl(ctx *gin.Context) {
 	ctx.Data(http.StatusOK, "image/jpeg", data)
 }
 
+// ChangeAvatar 确定修改头像
+func ChangeAvatar(ctx *gin.Context) {
+	// 获取url
+	avatarUrl := ctx.Query("avatarUrl")
+	if avatarUrl == "" {
+		response.RespondWithStatusBadRequest(ctx, "头像地址为空")
+		return
+	}
+	uid, _ := ctx.Get("uid")
+	// 判断用户是否已上传头像
+	exist, err1 := service.HasObject(config.AC.Oss.BucketName, "tempAvatar/", avatarUrl)
+	if err1 != nil {
+		response.RespondWithStatusBadRequest(ctx, err1.Error())
+		return
+	}
+	if exist {
+		// 将头像从temp文件夹转移至常规文件夹
+		err := service.CopyObjectToAnother(config.AC.Oss.BucketName, "tempAvatar/"+avatarUrl, "avatar/"+avatarUrl)
+		if err != nil {
+			response.RespondWithStatusBadRequest(ctx, err.Error())
+			return
+		}
+		// 从temp文件夹中删除文件
+		err = service.DeleteObject(config.AC.Oss.BucketName, "tempAvatar/", avatarUrl)
+		if err != nil {
+			response.RespondWithStatusBadRequest(ctx, err.Error())
+			return
+		}
+		// 更新用户头像地址
+		err = repository.UpdateUserAvatar(uid.(uint), avatarUrl)
+		if err != nil {
+			response.RespondWithStatusInternalServerError(ctx, err.Error())
+			return
+		}
+
+		response.RespondWithStatusOK(ctx, "保存成功")
+	} else {
+		response.RespondWithStatusBadRequest(ctx, "头像未上传")
+		return
+	}
+}
+
 // GetUserInfo 获取用户详情
 func GetUserInfo(ctx *gin.Context) {
 	tempUid, ok := ctx.Get("uid")
@@ -107,9 +149,4 @@ func UpdateUserInfo(ctx *gin.Context) {
 		return
 	}
 	response.RespondWithStatusOK(ctx, "更新成功")
-}
-
-// UploadAvatar 上传头像
-func UploadAvatar(ctx *gin.Context) {
-
 }

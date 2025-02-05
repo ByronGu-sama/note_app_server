@@ -36,8 +36,8 @@ func NewNote(ctx *gin.Context) {
 		return
 	}
 	note.Uid = uid
-	noteName := utils.EncodeName(fmt.Sprintf("%d-%d-%d", time.Now().Unix(), uid, rand.Int63()))
-	note.Nid = noteName
+	noteId := utils.EncodeNoteId(fmt.Sprintf("%d-%d-%d", time.Now().Unix(), uid, rand.Int63()))
+	note.Nid = noteId
 
 	tx := global.Db.Begin()
 	if err := tx.Create(&note).Error; err != nil {
@@ -207,6 +207,12 @@ func GetNoteList(ctx *gin.Context) {
 		"message": "success",
 		"data":    result,
 	})
+}
+
+// GetMyNotes 获取我的笔记列表
+func GetMyNotes(ctx *gin.Context) {
+	// 小于20条获取全部
+	// 大于20条分页获取
 }
 
 func checkUidAndNid(ctx *gin.Context) (string, uint, error) {

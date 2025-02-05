@@ -43,6 +43,14 @@ func UpdateUserInfo(info *model.UserInfo) error {
 	return nil
 }
 
+// UpdateUserAvatar 修改头像
+func UpdateUserAvatar(uid uint, avatarUrl string) error {
+	if err := global.Db.Model(&model.UserInfo{}).Where("uid = ?", uid).Updates(map[string]interface{}{"avatarUrl": avatarUrl}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 // UpdateLoginFailedAt 记录上次登陆失败的时间
 func UpdateLoginFailedAt(uid uint) {
 	global.Db.Model(&model.UserLogin{}).Where("uid = ?", uid).Update("lastLoginFailedAt", time.Now())

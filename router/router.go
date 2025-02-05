@@ -39,18 +39,21 @@ func SetupRouter() *gin.Engine {
 			controller.GetAvatarUrl(context)
 		})
 		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/upload", func(context *gin.Context) {
-			controller.UploadAvatar(context)
+			controller.UploadUserAvatar(context)
+		})
+		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/changeAvatar", func(context *gin.Context) {
+			controller.ChangeAvatar(context)
 		})
 	}
 
 	note := r.Group("/note")
-	note.GET("/list", func(c *gin.Context) {
-		controller.GetNoteList(c)
-	})
 	note.Use(middleware.TokenVerificationMiddleware())
 	{
 		note.POST("", func(c *gin.Context) {
 			controller.NewNote(c)
+		})
+		note.POST("/uploadPics", func(c *gin.Context) {
+			controller.UploadNotePics(c)
 		})
 		note.GET("/:nid", func(c *gin.Context) {
 			controller.GetNote(c)
@@ -61,7 +64,12 @@ func SetupRouter() *gin.Engine {
 		note.DELETE("/:nid", func(c *gin.Context) {
 			controller.DelNote(c)
 		})
-
+		note.GET("/list", func(c *gin.Context) {
+			controller.GetNoteList(c)
+		})
+		note.GET("/myNotes", func(c *gin.Context) {
+			controller.GetMyNotes(c)
+		})
 		note.GET("/like/:nid", func(c *gin.Context) {
 			controller.LikeNote(c)
 		})
