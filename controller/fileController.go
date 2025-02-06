@@ -2,11 +2,11 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"io"
 	"net/http"
 	"note_app_server/config"
 	"note_app_server/response"
 	"note_app_server/service"
+	"note_app_server/utils"
 )
 
 func UploadNotePics(ctx *gin.Context) {
@@ -27,19 +27,12 @@ func UploadUserAvatar(ctx *gin.Context) {
 		return
 	}
 
-	// 读取文件前512字节的数据
-	buf := make([]byte, 512)
-	if _, err := openFile.Read(buf); err != nil {
-		response.RespondWithStatusBadRequest(ctx, err.Error())
-		return
-	}
-	// 重置文件读取指针
-	if _, err := openFile.Seek(0, io.SeekStart); err != nil {
-		response.RespondWithStatusBadRequest(ctx, err.Error())
-		return
-	}
 	// 检查文件类型
-	contentType := http.DetectContentType(buf)
+	contentType, err := utils.DetectFileType(&openFile)
+	if err != nil {
+		response.RespondWithStatusBadRequest(ctx, err.Error())
+		return
+	}
 	if contentType != "image/jpeg" && contentType != "image/png" {
 		response.RespondWithStatusBadRequest(ctx, "不支持的文件类型")
 		return

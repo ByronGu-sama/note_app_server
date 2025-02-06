@@ -138,3 +138,8 @@ func Logout(ctx *gin.Context) {
 
 	response.RespondWithStatusOK(ctx, "已退出登录")
 }
+
+// CheckToken 检查token有效性
+func CheckToken(ctx *gin.Context) {
+	response.RespondWithStatusOK(ctx, "valid")
+}

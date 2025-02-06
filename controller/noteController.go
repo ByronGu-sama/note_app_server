@@ -5,39 +5,137 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
-	"math/rand"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
+	"io"
+	"log"
+	"math/rand/v2"
+	"mime/multipart"
 	"net/http"
+	"note_app_server/config"
 	"note_app_server/global"
 	"note_app_server/model"
 	"note_app_server/repository"
 	"note_app_server/response"
+	"note_app_server/service"
 	"note_app_server/utils"
 	"strconv"
+	"sync"
 	"time"
 )
 
 // NewNote 创建笔记
 func NewNote(ctx *gin.Context) {
-	var note model.Note
-	if err := ctx.ShouldBind(&note); err != nil {
-		response.RespondWithStatusBadRequest(ctx, "创建失败")
-		return
-	}
-
-	if note.Title == "" || note.Content == "" {
+	// 检查标题和内容
+	title := ctx.PostForm("title")
+	content := ctx.PostForm("content")
+	tags := ctx.PostForm("tags")
+	if title == "" || content == "" {
 		response.RespondWithStatusBadRequest(ctx, "关键信息不能为空")
 		return
 	}
 
+	// 检查用户uid是否存在
 	tempUid, ok := ctx.Get("uid")
 	uid := tempUid.(uint)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
 	}
-	note.Uid = uid
-	noteId := utils.EncodeNoteId(fmt.Sprintf("%d-%d-%d", time.Now().Unix(), uid, rand.Int63()))
-	note.Nid = noteId
+
+	// 生成笔记id
+	noteId := utils.EncodeNoteId(fmt.Sprintf("%d-%d-%d", time.Now().Unix(), uid, rand.Int64()))
+
+	var coverHeight int
+	var cover string
+	var picsNameList string
+	var wg sync.WaitGroup
+	type uploadRequest struct {
+		fileHeader *multipart.FileHeader
+		index      int
+	}
+	uploadChanList := make(chan uploadRequest)
+	go func() {
+		for req := range uploadChanList {
+			wg.Add(1)
+			go func(req uploadRequest) {
+				defer wg.Done()
+				openFile, err1 := req.fileHeader.Open()
+				if err1 != nil {
+					response.RespondWithStatusBadRequest(ctx, err1.Error())
+					return
+				}
+				defer func(openFile multipart.File) {
+					err := openFile.Close()
+					if err != nil {
+						log.Printf("close file err: %v", err)
+					}
+				}(openFile)
+
+				// 判断文件类型
+				fileType, err2 := utils.DetectFileType(&openFile)
+				if err2 != nil {
+					response.RespondWithStatusBadRequest(ctx, err2.Error())
+					return
+				}
+				if fileType == "image/png" {
+					fileType = "png"
+				}
+				if fileType == "image/jpeg" {
+					fileType = "jpeg"
+				}
+
+				// 获取封面高度
+				if req.index == 0 {
+					img, _, err := image.Decode(openFile)
+					if err != nil {
+						response.RespondWithStatusBadRequest(ctx, err.Error())
+						return
+					}
+					// 重置指针
+					_, err = openFile.Seek(0, io.SeekStart)
+					if err != nil {
+						return
+					}
+					coverHeight = img.Bounds().Dy()
+				}
+
+				// 推送笔记图片至OSS
+				fileName, err3 := service.UploadFileObject(config.AC.Oss.BucketName, "notePics/"+noteId+"/", openFile, fileType)
+				// 获取封面
+				if req.index == 0 {
+					cover = fileName
+				}
+
+				if err3 != nil {
+					response.RespondWithStatusInternalServerError(ctx, err3.Error())
+					return
+				} else {
+					picsNameList += fileName + ";"
+				}
+			}(req)
+		}
+	}()
+	// 按顺序将文件推送进通道中
+	for index, fileHeader := range ctx.Request.MultipartForm.File["file"] {
+		uploadChanList <- uploadRequest{fileHeader, index}
+	}
+	close(uploadChanList)
+	wg.Wait()
+
+	note := &model.Note{
+		Nid:         noteId,
+		Uid:         uid,
+		Cover:       cover,
+		CoverHeight: coverHeight,
+		Pics:        picsNameList[:len(picsNameList)-1],
+		CategoryId:  1,
+		Tags:        tags,
+		Title:       title,
+		Content:     content,
+		Public:      1,
+	}
 
 	tx := global.Db.Begin()
 	if err := tx.Create(&note).Error; err != nil {
@@ -211,8 +309,40 @@ func GetNoteList(ctx *gin.Context) {
 
 // GetMyNotes 获取我的笔记列表
 func GetMyNotes(ctx *gin.Context) {
-	// 小于20条获取全部
-	// 大于20条分页获取
+	tempPage := ctx.Query("page")
+	tempLimit := ctx.Query("limit")
+
+	if tempPage == "" || tempLimit == "" {
+		response.RespondWithStatusBadRequest(ctx, "缺失参数")
+		return
+	}
+	page, err1 := strconv.Atoi(tempPage)
+	if err1 != nil {
+		response.RespondWithStatusBadRequest(ctx, err1.Error())
+		return
+	}
+	limit, err2 := strconv.Atoi(tempLimit)
+	if err2 != nil {
+		response.RespondWithStatusBadRequest(ctx, err2.Error())
+		return
+	}
+
+	uid, ok := ctx.Get("uid")
+	if !ok {
+		response.RespondWithUnauthorized(ctx, "无权限")
+		return
+	}
+
+	result, err3 := repository.GetNoteListWithUid(uid.(uint), page, limit)
+	if err3 != nil {
+		response.RespondWithStatusBadRequest(ctx, err3.Error())
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"message": "success",
+		"data":    result,
+	})
 }
 
 func checkUidAndNid(ctx *gin.Context) (string, uint, error) {

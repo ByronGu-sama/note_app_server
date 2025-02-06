@@ -6,6 +6,7 @@ type Note struct {
 	Nid              string    `json:"nid" gorm:"column:nid"`
 	Uid              uint      `json:"uid" gorm:"column:uid"`
 	Cover            string    `json:"cover" gorm:"column:cover"`
+	CoverHeight      int       `json:"cover_height" gorm:"column:cover_height"`
 	Pics             string    `json:"pics" gorm:"column:pics"`
 	Title            string    `json:"title" gorm:"column:title"`
 	Content          string    `json:"content" gorm:"column:content"`

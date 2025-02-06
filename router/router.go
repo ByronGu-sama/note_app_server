@@ -17,6 +17,9 @@ func SetupRouter() *gin.Engine {
 		auth.POST("/login", func(context *gin.Context) {
 			controller.Login(context)
 		})
+		auth.Use(middleware.TokenVerificationMiddleware()).GET("/checkToken", func(context *gin.Context) {
+			controller.CheckToken(context)
+		})
 		auth.Use(middleware.TokenVerificationMiddleware()).POST("/logout", func(context *gin.Context) {
 			controller.Logout(context)
 		})
@@ -41,7 +44,7 @@ func SetupRouter() *gin.Engine {
 		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/upload", func(context *gin.Context) {
 			controller.UploadUserAvatar(context)
 		})
-		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/changeAvatar", func(context *gin.Context) {
+		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/change", func(context *gin.Context) {
 			controller.ChangeAvatar(context)
 		})
 	}

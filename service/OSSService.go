@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"io"
 	"log"
 	"math/rand/v2"
@@ -10,8 +11,6 @@ import (
 	"time"
 )
 
-var client = global.OssClient
-
 // UploadFileObject 用于将本地文件上传到OSS存储桶。
 // @params bucketName - 存储空间名称。
 // @params pathPrefix - 文件路径前缀
@@ -19,7 +18,8 @@ var client = global.OssClient
 // @params file - 文件读取流
 // @return 文件名，错误
 func UploadFileObject(bucketName, pathPrefix string, file io.Reader, fileType string) (string, error) {
-	checkClientIfNil()
+	client := global.OssClientPool.Get().(*oss.Client)
+	defer global.OssClientPool.Put(client)
 	// 获取存储空间。
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
@@ -28,6 +28,7 @@ func UploadFileObject(bucketName, pathPrefix string, file io.Reader, fileType st
 
 	encodeFullFileName := utils.EncodePicsName(fmt.Sprintf("%d-%d", time.Now().Unix(), rand.Int64())) + "." + fileType
 	objectName := pathPrefix + encodeFullFileName
+
 	// 上传文件。
 	err = bucket.PutObject(objectName, file)
 	if err != nil {
@@ -43,7 +44,8 @@ func UploadFileObject(bucketName, pathPrefix string, file io.Reader, fileType st
 // @params bucketName - 存储空间名称。
 // @params objectName - Object完整路径，完整路径中不能包含Bucket名称。
 func GetOssObject(bucketName, objectName string) (io.ReadCloser, error) {
-	checkClientIfNil()
+	client := global.OssClientPool.Get().(*oss.Client)
+	defer global.OssClientPool.Put(client)
 	// 获取存储空间。
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
@@ -63,7 +65,8 @@ func GetOssObject(bucketName, objectName string) (io.ReadCloser, error) {
 // @params bucketName - 存储空间名称。
 // @params objectName - 要删除的对象名称。
 func DeleteObject(bucketName, pathPrefix, objectName string) error {
-	checkClientIfNil()
+	client := global.OssClientPool.Get().(*oss.Client)
+	defer global.OssClientPool.Put(client)
 	// 获取存储空间
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
@@ -86,7 +89,8 @@ func DeleteObject(bucketName, pathPrefix, objectName string) error {
 // @params originName 文件原始位置
 // @params destName 文件目标存储位置
 func CopyObjectToAnother(bucketName, originName, srcName string) error {
-	checkClientIfNil()
+	client := global.OssClientPool.Get().(*oss.Client)
+	defer global.OssClientPool.Put(client)
 	bucket, err := client.Bucket(bucketName)
 	if err != nil {
 		return err
@@ -102,7 +106,8 @@ func CopyObjectToAnother(bucketName, originName, srcName string) error {
 // @params bucketName 桶名称
 // @params objectName 文件名
 func HasObject(bucketName, pathPrefix, objectName string) (bool, error) {
-	checkClientIfNil()
+	client := global.OssClientPool.Get().(*oss.Client)
+	defer global.OssClientPool.Put(client)
 	bucket, err1 := client.Bucket(bucketName)
 	if err1 != nil {
 		return false, err1
@@ -112,10 +117,4 @@ func HasObject(bucketName, pathPrefix, objectName string) (bool, error) {
 		return false, err2
 	}
 	return exist, nil
-}
-
-func checkClientIfNil() {
-	if client == nil {
-		client = global.OssClient
-	}
 }

@@ -99,10 +99,24 @@ func CancelCollectNote(nid string, uid uint) error {
 }
 
 // GetNoteList 查询列表
-func GetNoteList(start int, limit int) ([]model.Note, error) {
+func GetNoteList(start, limit int) ([]model.Note, error) {
 	offset := (start - 1) * limit
 	var result []model.Note
 	res := global.Db.Model(&model.Note{}).Offset(offset).Limit(limit).Find(&result)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, errors.New("没有数据了哦")
+	}
+	return result, nil
+}
+
+// GetNoteListWithUid 查询用户发布的帖子
+func GetNoteListWithUid(uid uint, start, limit int) ([]model.Note, error) {
+	offset := (start - 1) * limit
+	var result []model.Note
+	res := global.Db.Model(&model.Note{}).Where("uid = ?", uid).Offset(offset).Limit(limit).Find(&result)
 	if res.Error != nil {
 		return nil, res.Error
 	}
