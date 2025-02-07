@@ -43,7 +43,7 @@ func UploadFileObject(bucketName, pathPrefix string, file io.Reader, fileType st
 // GetOssObject 用于从OSS存储桶获取文件流。
 // @params bucketName - 存储空间名称。
 // @params objectName - Object完整路径，完整路径中不能包含Bucket名称。
-func GetOssObject(bucketName, objectName string) (io.ReadCloser, error) {
+func GetOssObject(bucketName, pathPrefix, objectName string) (io.ReadCloser, error) {
 	client := global.OssClientPool.Get().(*oss.Client)
 	defer global.OssClientPool.Put(client)
 	// 获取存储空间。
@@ -53,7 +53,7 @@ func GetOssObject(bucketName, objectName string) (io.ReadCloser, error) {
 	}
 
 	// 获取输入流
-	object, err1 := bucket.GetObject("avatar/" + objectName)
+	object, err1 := bucket.GetObject(pathPrefix + objectName)
 	if err1 != nil {
 		return nil, err1
 	} else {

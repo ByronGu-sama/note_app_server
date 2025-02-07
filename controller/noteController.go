@@ -20,14 +20,15 @@ import (
 	"note_app_server/response"
 	"note_app_server/service"
 	"note_app_server/utils"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
 
 // NewNote 创建笔记
 func NewNote(ctx *gin.Context) {
-	// 检查标题和内容
 	title := ctx.PostForm("title")
 	content := ctx.PostForm("content")
 	tags := ctx.PostForm("tags")
@@ -36,7 +37,6 @@ func NewNote(ctx *gin.Context) {
 		return
 	}
 
-	// 检查用户uid是否存在
 	tempUid, ok := ctx.Get("uid")
 	uid := tempUid.(uint)
 	if !ok {
@@ -44,7 +44,6 @@ func NewNote(ctx *gin.Context) {
 		return
 	}
 
-	// 生成笔记id
 	noteId := utils.EncodeNoteId(fmt.Sprintf("%d-%d-%d", time.Now().Unix(), uid, rand.Int64()))
 
 	var coverHeight int
@@ -101,7 +100,6 @@ func NewNote(ctx *gin.Context) {
 					coverHeight = img.Bounds().Dy()
 				}
 
-				// 推送笔记图片至OSS
 				fileName, err3 := service.UploadFileObject(config.AC.Oss.BucketName, "notePics/"+noteId+"/", openFile, fileType)
 				// 获取封面
 				if req.index == 0 {
@@ -117,7 +115,6 @@ func NewNote(ctx *gin.Context) {
 			}(req)
 		}
 	}()
-	// 按顺序将文件推送进通道中
 	for index, fileHeader := range ctx.Request.MultipartForm.File["file"] {
 		uploadChanList <- uploadRequest{fileHeader, index}
 	}
@@ -208,11 +205,69 @@ func GetNote(ctx *gin.Context) {
 		})
 		return
 	}
+
+	rawPicsList := strings.Split(note.Pics, ";")
+	picsList := make([]string, 0)
+	for _, pic := range rawPicsList {
+		picsList = append(picsList, "http://"+config.AC.App.Host+config.AC.App.Port+"/note/pic/"+nid+"/"+pic)
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"code":    http.StatusOK,
 		"message": "success",
-		"data":    note,
+		"data": gin.H{
+			"nid":              note.Nid,
+			"uid":              note.Uid,
+			"cover":            note.Cover,
+			"pics":             picsList,
+			"coverHeight":      note.CoverHeight,
+			"title":            note.Title,
+			"content":          note.Content,
+			"createdAt":        note.CreatedAt,
+			"updatedAt":        note.UpdatedAt,
+			"categoryId":       note.CategoryId,
+			"tags":             note.Tags,
+			"likesCount":       note.LikesCount,
+			"commentsCount":    note.CommentsCount,
+			"collectionsCount": note.CollectionsCount,
+			"sharesCount":      note.SharesCount,
+			"viewsCount":       note.ViewsCount,
+		},
 	})
+}
+
+// GetNotePic 转换笔记图片地址
+func GetNotePic(ctx *gin.Context) {
+	nid := ctx.Param("nid")
+	fileName := ctx.Param("fileName")
+	reader, err := service.GetOssObject(config.AC.Oss.BucketName, "notePics/"+nid+"/", fileName)
+
+	if err != nil {
+		response.RespondWithStatusBadRequest(ctx, "获取Oss服务失败")
+		return
+	}
+
+	defer func(reader io.ReadCloser) {
+		err := reader.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(reader)
+
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		response.RespondWithStatusBadRequest(ctx, "读取文件流失败")
+		return
+	}
+	fileType := filepath.Ext(fileName)
+	if fileType == ".jpeg" || fileType == ".jpg" {
+		fileType = "image/jpeg"
+	}
+	if fileType == ".png" {
+		fileType = "image/png"
+	}
+	ctx.Header("Content-Type", fileType)
+	ctx.Data(http.StatusOK, fileType, data)
 }
 
 // LikeNote 点赞笔记
@@ -300,6 +355,12 @@ func GetNoteList(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, err3.Error())
 		return
 	}
+
+	for i := range result {
+		result[i].AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + result[i].AvatarUrl
+		result[i].Cover = "http://" + config.AC.App.Host + config.AC.App.Port + "/note/pic/" + result[i].Nid + "/" + result[i].Cover
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"code":    http.StatusOK,
 		"message": "success",
@@ -338,6 +399,12 @@ func GetMyNotes(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, err3.Error())
 		return
 	}
+
+	for i := range result {
+		result[i].AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + result[i].AvatarUrl
+		result[i].Cover = "http://" + config.AC.App.Host + config.AC.App.Port + "/note/pic/" + result[i].Nid + "/" + result[i].Cover
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"code":    http.StatusOK,
 		"message": "success",

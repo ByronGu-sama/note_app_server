@@ -12,5 +12,4 @@ func main() {
 	if err := r.Run(config.AC.App.Port); err != nil {
 		return
 	}
-
 }

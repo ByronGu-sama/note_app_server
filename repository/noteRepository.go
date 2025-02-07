@@ -99,10 +99,10 @@ func CancelCollectNote(nid string, uid uint) error {
 }
 
 // GetNoteList 查询列表
-func GetNoteList(start, limit int) ([]model.Note, error) {
+func GetNoteList(start, limit int) ([]model.SurfaceNote, error) {
 	offset := (start - 1) * limit
-	var result []model.Note
-	res := global.Db.Model(&model.Note{}).Offset(offset).Limit(limit).Find(&result)
+	var result []model.SurfaceNote
+	res := global.Db.Model(&model.SurfaceNote{}).Raw("select n.nid as nid, n.uid as uid, u.avatarUrl as avatarUrl, n.cover as cover, n.cover_height as cover_height, n.title as title, n.public as public, n.category_id as category_id, n.tags as tags, n.likes_count as like_count from notes n join user_info u on n.uid = u.uid where n.status = 1 limit ?, ?", offset, limit).Scan(&result)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -113,10 +113,10 @@ func GetNoteList(start, limit int) ([]model.Note, error) {
 }
 
 // GetNoteListWithUid 查询用户发布的帖子
-func GetNoteListWithUid(uid uint, start, limit int) ([]model.Note, error) {
+func GetNoteListWithUid(uid uint, start, limit int) ([]model.SurfaceNote, error) {
 	offset := (start - 1) * limit
-	var result []model.Note
-	res := global.Db.Model(&model.Note{}).Where("uid = ?", uid).Offset(offset).Limit(limit).Find(&result)
+	var result []model.SurfaceNote
+	res := global.Db.Model(&model.SurfaceNote{}).Raw("select n.nid as nid, n.uid as uid, u.avatarUrl as avatarUrl, n.cover as cover, n.cover_height as cover_height, n.title as title, n.public as public, n.category_id as category_id, n.tags as tags, n.likes_count as like_count from user_info u left join notes n on n.uid = u.uid where n.status = 1 and u.uid = ? limit ?, ?", uid, offset, limit).Scan(&result)
 	if res.Error != nil {
 		return nil, res.Error
 	}

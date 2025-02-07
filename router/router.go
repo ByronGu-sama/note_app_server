@@ -11,79 +11,82 @@ func SetupRouter() *gin.Engine {
 	r.Use(middleware.CorsMiddleware())
 	auth := r.Group("/auth")
 	{
-		auth.POST("/register", func(context *gin.Context) {
-			controller.Register(context)
+		auth.POST("/register", func(ctx *gin.Context) {
+			controller.Register(ctx)
 		})
-		auth.POST("/login", func(context *gin.Context) {
-			controller.Login(context)
+		auth.POST("/login", func(ctx *gin.Context) {
+			controller.Login(ctx)
 		})
-		auth.Use(middleware.TokenVerificationMiddleware()).GET("/checkToken", func(context *gin.Context) {
-			controller.CheckToken(context)
+		auth.Use(middleware.TokenVerificationMiddleware()).GET("/checkToken", func(ctx *gin.Context) {
+			controller.CheckToken(ctx)
 		})
-		auth.Use(middleware.TokenVerificationMiddleware()).POST("/logout", func(context *gin.Context) {
-			controller.Logout(context)
+		auth.Use(middleware.TokenVerificationMiddleware()).POST("/logout", func(ctx *gin.Context) {
+			controller.Logout(ctx)
 		})
 	}
 
 	userInfo := r.Group("/userInfo")
 	userInfo.Use(middleware.TokenVerificationMiddleware())
 	{
-		userInfo.GET("", func(context *gin.Context) {
-			controller.GetUserInfo(context)
+		userInfo.GET("", func(ctx *gin.Context) {
+			controller.GetUserInfo(ctx)
 		})
-		userInfo.POST("/update", func(context *gin.Context) {
-			controller.UpdateUserInfo(context)
+		userInfo.POST("/update", func(ctx *gin.Context) {
+			controller.UpdateUserInfo(ctx)
 		})
 	}
 
 	avatar := r.Group("/avatar")
 	{
-		avatar.GET("/:fileName", func(context *gin.Context) {
-			controller.GetAvatarUrl(context)
+		avatar.GET("/:fileName", func(ctx *gin.Context) {
+			controller.GetAvatarUrl(ctx)
 		})
-		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/upload", func(context *gin.Context) {
-			controller.UploadUserAvatar(context)
+		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/upload", func(ctx *gin.Context) {
+			controller.UploadUserAvatar(ctx)
 		})
-		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/change", func(context *gin.Context) {
-			controller.ChangeAvatar(context)
+		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/change", func(ctx *gin.Context) {
+			controller.ChangeAvatar(ctx)
 		})
 	}
 
 	note := r.Group("/note")
 	note.Use(middleware.TokenVerificationMiddleware())
 	{
-		note.POST("", func(c *gin.Context) {
-			controller.NewNote(c)
+		note.POST("", func(ctx *gin.Context) {
+			controller.NewNote(ctx)
 		})
-		note.POST("/uploadPics", func(c *gin.Context) {
-			controller.UploadNotePics(c)
+		note.POST("/uploadPics", func(ctx *gin.Context) {
+			controller.UploadNotePics(ctx)
 		})
-		note.GET("/:nid", func(c *gin.Context) {
-			controller.GetNote(c)
+		note.GET("/:nid", func(ctx *gin.Context) {
+			controller.GetNote(ctx)
 		})
-		note.PUT("", func(c *gin.Context) {
-			controller.EditNote(c)
+		note.PUT("", func(ctx *gin.Context) {
+			controller.EditNote(ctx)
 		})
-		note.DELETE("/:nid", func(c *gin.Context) {
-			controller.DelNote(c)
+		note.DELETE("/:nid", func(ctx *gin.Context) {
+			controller.DelNote(ctx)
 		})
-		note.GET("/list", func(c *gin.Context) {
-			controller.GetNoteList(c)
+		note.GET("/list", func(ctx *gin.Context) {
+			controller.GetNoteList(ctx)
 		})
-		note.GET("/myNotes", func(c *gin.Context) {
-			controller.GetMyNotes(c)
+		note.GET("/pic/:nid/:fileName", func(ctx *gin.Context) {
+			controller.GetNotePic(ctx)
 		})
-		note.GET("/like/:nid", func(c *gin.Context) {
-			controller.LikeNote(c)
+		note.GET("/myNotes", func(ctx *gin.Context) {
+			controller.GetMyNotes(ctx)
 		})
-		note.GET("/dislike/:nid", func(c *gin.Context) {
-			controller.DislikeNote(c)
+		note.GET("/like/:nid", func(ctx *gin.Context) {
+			controller.LikeNote(ctx)
 		})
-		note.GET("/collect/:nid", func(c *gin.Context) {
-			controller.CollectNote(c)
+		note.GET("/dislike/:nid", func(ctx *gin.Context) {
+			controller.DislikeNote(ctx)
 		})
-		note.GET("/cancelCollect/:nid", func(c *gin.Context) {
-			controller.CancelCollectNote(c)
+		note.GET("/collect/:nid", func(ctx *gin.Context) {
+			controller.CollectNote(ctx)
+		})
+		note.GET("/cancelCollect/:nid", func(ctx *gin.Context) {
+			controller.CancelCollectNote(ctx)
 		})
 	}
 	return r

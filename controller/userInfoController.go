@@ -15,7 +15,7 @@ import (
 // GetAvatarUrl 获取代理头像地址
 func GetAvatarUrl(ctx *gin.Context) {
 	fileName := ctx.Param("fileName")
-	reader, err := service.GetOssObject(config.AC.Oss.BucketName, fileName)
+	reader, err := service.GetOssObject(config.AC.Oss.BucketName, "avatar/", fileName)
 
 	if err != nil {
 		response.RespondWithStatusBadRequest(ctx, "获取Oss服务失败")
@@ -98,7 +98,7 @@ func GetUserInfo(ctx *gin.Context) {
 		return
 	} else {
 		userInfo = temp
-		userInfo.AvatarUrl = "http://localhost:8081/avatar/" + userInfo.AvatarUrl
+		userInfo.AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + userInfo.AvatarUrl
 	}
 
 	if temp, err := repository.GetUserCreationInfo(uid); err != nil {

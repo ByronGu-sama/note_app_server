@@ -20,7 +20,7 @@ type Note struct {
 	CollectionsCount uint      `json:"collectionsCount" gorm:"column:collections_count"`
 	SharesCount      uint      `json:"sharesCount" gorm:"column:shares_count"`
 	ViewsCount       uint      `json:"viewsCount" gorm:"column:views_count"`
-	Status           uint      `json:"status" gorm:"column:status"`
+	Status           uint      `json:"status" gorm:"column:status default:1"`
 }
 
 func (Note) TableName() string {
