@@ -1,4 +1,4 @@
-package model
+package userModel
 
 type UserCreationInfo struct {
 	Uid       uint `json:"uid" gorm:"column:uid; default:null"`

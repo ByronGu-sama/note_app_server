@@ -50,13 +50,13 @@ func SetupRouter() *gin.Engine {
 	}
 
 	note := r.Group("/note")
+	note.GET("/pic/:nid/:fileName", func(ctx *gin.Context) {
+		controller.GetNotePic(ctx)
+	})
 	note.Use(middleware.TokenVerificationMiddleware())
 	{
 		note.POST("", func(ctx *gin.Context) {
 			controller.NewNote(ctx)
-		})
-		note.POST("/uploadPics", func(ctx *gin.Context) {
-			controller.UploadNotePics(ctx)
 		})
 		note.GET("/:nid", func(ctx *gin.Context) {
 			controller.GetNote(ctx)
@@ -69,9 +69,6 @@ func SetupRouter() *gin.Engine {
 		})
 		note.GET("/list", func(ctx *gin.Context) {
 			controller.GetNoteList(ctx)
-		})
-		note.GET("/pic/:nid/:fileName", func(ctx *gin.Context) {
-			controller.GetNotePic(ctx)
 		})
 		note.GET("/myNotes", func(ctx *gin.Context) {
 			controller.GetMyNotes(ctx)
@@ -89,5 +86,26 @@ func SetupRouter() *gin.Engine {
 			controller.CancelCollectNote(ctx)
 		})
 	}
+
+	comment := r.Group("/comment")
+	comment.Use(middleware.TokenVerificationMiddleware())
+	{
+		comment.POST("", func(ctx *gin.Context) {
+			controller.NewComment(ctx)
+		})
+		comment.GET("/getList/:nid", func(ctx *gin.Context) {
+			controller.GetCommentList(ctx)
+		})
+		comment.DELETE("/delComment/:cid", func(ctx *gin.Context) {
+			controller.DelComment(ctx)
+		})
+		comment.GET("/like/:cid", func(ctx *gin.Context) {
+			controller.LikeComment(ctx)
+		})
+		comment.GET("/dislike/:cid", func(ctx *gin.Context) {
+			controller.CancelLikeComment(ctx)
+		})
+	}
+
 	return r
 }

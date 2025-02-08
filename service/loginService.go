@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"log"
 	"note_app_server/global"
-	"note_app_server/model"
+	"note_app_server/model/appModel"
 	"note_app_server/repository"
 	"strconv"
 	"time"
@@ -57,7 +57,7 @@ func GenerateJWT(uid uint) (string, error) {
 
 // ParseJWT 解析JWT
 func ParseJWT(tokenString string) (interface{}, error) {
-	claims := &model.JWT{}
+	claims := &appModel.JWT{}
 	temp, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return global.JWTKey, nil
 	})

@@ -9,10 +9,6 @@ import (
 	"note_app_server/utils"
 )
 
-func UploadNotePics(ctx *gin.Context) {
-
-}
-
 func UploadUserAvatar(ctx *gin.Context) {
 	// 获取表单文件
 	file, err := ctx.FormFile("avatar")

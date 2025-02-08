@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"note_app_server/config"
-	"note_app_server/model"
+	"note_app_server/model/userModel"
 	"note_app_server/repository"
 	"note_app_server/response"
 	"note_app_server/service"
@@ -90,8 +90,8 @@ func GetUserInfo(ctx *gin.Context) {
 		return
 	}
 
-	var userInfo *model.UserInfo
-	var userCreationInfo *model.UserCreationInfo
+	var userInfo *userModel.UserInfo
+	var userCreationInfo *userModel.UserCreationInfo
 
 	if temp, err := repository.GetUserInfo(uid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
@@ -138,7 +138,7 @@ func UpdateUserInfo(ctx *gin.Context) {
 		return
 	}
 
-	var userInfo *model.UserInfo
+	var userInfo *userModel.UserInfo
 	if err := ctx.ShouldBind(&userInfo); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "绑定失败")
 		return

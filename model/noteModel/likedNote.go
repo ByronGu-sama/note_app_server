@@ -1,4 +1,4 @@
-package model
+package noteModel
 
 type LikedNotes struct {
 	Uid uint   `json:"uid" gorm:"uid"`
@@ -6,5 +6,5 @@ type LikedNotes struct {
 }
 
 func (LikedNotes) TableName() string {
-	return "liked_notes"
+	return "liked_note"
 }

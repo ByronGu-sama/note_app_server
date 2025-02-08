@@ -10,12 +10,14 @@ import (
 	_ "image/png"
 	"io"
 	"log"
+	"math"
 	"math/rand/v2"
 	"mime/multipart"
 	"net/http"
 	"note_app_server/config"
 	"note_app_server/global"
-	"note_app_server/model"
+	"note_app_server/model/noteModel"
+	"note_app_server/model/userModel"
 	"note_app_server/repository"
 	"note_app_server/response"
 	"note_app_server/service"
@@ -44,9 +46,9 @@ func NewNote(ctx *gin.Context) {
 		return
 	}
 
-	noteId := utils.EncodeNoteId(fmt.Sprintf("%d-%d-%d", time.Now().Unix(), uid, rand.Int64()))
+	noteId := utils.EncodeWithMD5(fmt.Sprintf("%d-%d-%d", time.Now().Unix(), uid, rand.Int64()))
 
-	var coverHeight int
+	var coverHeight float64
 	var cover string
 	var picsNameList string
 	var wg sync.WaitGroup
@@ -97,7 +99,9 @@ func NewNote(ctx *gin.Context) {
 					if err != nil {
 						return
 					}
-					coverHeight = img.Bounds().Dy()
+					height := img.Bounds().Dy()
+					width := img.Bounds().Dx()
+					coverHeight = math.Round(100.0/float64(width)*float64(height)*100) / 100
 				}
 
 				fileName, err3 := service.UploadFileObject(config.AC.Oss.BucketName, "notePics/"+noteId+"/", openFile, fileType)
@@ -121,7 +125,7 @@ func NewNote(ctx *gin.Context) {
 	close(uploadChanList)
 	wg.Wait()
 
-	note := &model.Note{
+	n := &noteModel.Note{
 		Nid:         noteId,
 		Uid:         uid,
 		Cover:       cover,
@@ -135,12 +139,12 @@ func NewNote(ctx *gin.Context) {
 	}
 
 	tx := global.Db.Begin()
-	if err := tx.Create(&note).Error; err != nil {
+	if err := tx.Create(&n).Error; err != nil {
 		tx.Rollback()
 		response.RespondWithStatusBadRequest(ctx, "创建失败")
 		return
 	}
-	userCreation := &model.UserCreationInfo{}
+	userCreation := &userModel.UserCreationInfo{}
 	if err := tx.Model(userCreation).Where("uid = ?", uid).Update("noteCount", gorm.Expr("noteCount + ?", 1)).Error; err != nil {
 		tx.Rollback()
 		response.RespondWithStatusBadRequest(ctx, "创建失败")
@@ -166,7 +170,7 @@ func DelNote(ctx *gin.Context) {
 
 // EditNote 编辑笔记
 func EditNote(ctx *gin.Context) {
-	var note model.Note
+	var note noteModel.Note
 	if err := ctx.ShouldBind(&note); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "绑定失败")
 		return
@@ -198,18 +202,11 @@ func GetNote(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "无相关信息")
 		return
 	}
-	if note.Status == 0 {
-		ctx.JSON(http.StatusOK, gin.H{
-			"code":    http.StatusOK,
-			"message": "此条笔记已被删除/封禁",
-		})
-		return
-	}
 
 	rawPicsList := strings.Split(note.Pics, ";")
 	picsList := make([]string, 0)
 	for _, pic := range rawPicsList {
-		picsList = append(picsList, "http://"+config.AC.App.Host+config.AC.App.Port+"/note/pic/"+nid+"/"+pic)
+		picsList = append(picsList, "http://"+config.AC.App.Host+config.AC.App.Port+"/noteModel/pic/"+nid+"/"+pic)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -218,13 +215,14 @@ func GetNote(ctx *gin.Context) {
 		"data": gin.H{
 			"nid":              note.Nid,
 			"uid":              note.Uid,
-			"cover":            note.Cover,
+			"avatarUrl":        note.AvatarUrl,
+			"username":         note.Username,
 			"pics":             picsList,
-			"coverHeight":      note.CoverHeight,
 			"title":            note.Title,
 			"content":          note.Content,
 			"createdAt":        note.CreatedAt,
 			"updatedAt":        note.UpdatedAt,
+			"public":           note.Public,
 			"categoryId":       note.CategoryId,
 			"tags":             note.Tags,
 			"likesCount":       note.LikesCount,
@@ -358,7 +356,7 @@ func GetNoteList(ctx *gin.Context) {
 
 	for i := range result {
 		result[i].AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + result[i].AvatarUrl
-		result[i].Cover = "http://" + config.AC.App.Host + config.AC.App.Port + "/note/pic/" + result[i].Nid + "/" + result[i].Cover
+		result[i].Cover = "http://" + config.AC.App.Host + config.AC.App.Port + "/noteModel/pic/" + result[i].Nid + "/" + result[i].Cover
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -402,7 +400,7 @@ func GetMyNotes(ctx *gin.Context) {
 
 	for i := range result {
 		result[i].AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + result[i].AvatarUrl
-		result[i].Cover = "http://" + config.AC.App.Host + config.AC.App.Port + "/note/pic/" + result[i].Nid + "/" + result[i].Cover
+		result[i].Cover = "http://" + config.AC.App.Host + config.AC.App.Port + "/noteModel/pic/" + result[i].Nid + "/" + result[i].Cover
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{

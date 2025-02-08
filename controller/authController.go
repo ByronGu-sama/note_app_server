@@ -6,7 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"note_app_server/global"
-	"note_app_server/model"
+	"note_app_server/model/userModel"
 	"note_app_server/repository"
 	"note_app_server/response"
 	"note_app_server/service"
@@ -15,7 +15,7 @@ import (
 
 // Register 注册
 func Register(ctx *gin.Context) {
-	var user model.UserLogin
+	var user userModel.UserLogin
 	// 检查必要字段是否缺失
 	if err := ctx.ShouldBind(&user); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "注册失败")
@@ -57,8 +57,8 @@ func Register(ctx *gin.Context) {
 		response.RespondWithStatusInternalServerError(ctx, "服务器内部错误")
 		return
 	}
-	var userInfo model.UserInfo
-	var userCreationInfo model.UserCreationInfo
+	var userInfo userModel.UserInfo
+	var userCreationInfo userModel.UserCreationInfo
 	userInfo.Uid = newUser.Uid
 	userInfo.AvatarUrl = "test.jpeg"
 	userCreationInfo.Uid = newUser.Uid
@@ -80,7 +80,7 @@ func Register(ctx *gin.Context) {
 
 // Login 登陆
 func Login(ctx *gin.Context) {
-	var user model.UserLogin
+	var user userModel.UserLogin
 	if err := ctx.ShouldBind(&user); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "登陆失败")
 		return

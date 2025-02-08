@@ -3,12 +3,12 @@ package config
 import (
 	"github.com/spf13/viper"
 	"log"
-	"note_app_server/model"
+	"note_app_server/model/appModel"
 	"note_app_server/service"
 	"sync"
 )
 
-var AC *model.AppConfig
+var AC *appModel.AppConfig
 
 // InitAppConfig 读取config.yml文件
 func InitAppConfig() {
@@ -18,7 +18,7 @@ func InitAppConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("read config failed, err:%v\n", err)
 	}
-	AC = &model.AppConfig{}
+	AC = &appModel.AppConfig{}
 	if err := viper.Unmarshal(AC); err != nil {
 		log.Fatalf("unmarshal config failed, err:%v\n", err)
 	}

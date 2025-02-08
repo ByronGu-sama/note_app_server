@@ -26,7 +26,7 @@ func UploadFileObject(bucketName, pathPrefix string, file io.Reader, fileType st
 		return "", err
 	}
 
-	encodeFullFileName := utils.EncodePicsName(fmt.Sprintf("%d-%d", time.Now().Unix(), rand.Int64())) + "." + fileType
+	encodeFullFileName := utils.EncodeWithSHA256(fmt.Sprintf("%d-%d", time.Now().Unix(), rand.Int64())) + "." + fileType
 	objectName := pathPrefix + encodeFullFileName
 
 	// 上传文件。

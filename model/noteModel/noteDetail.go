@@ -1,12 +1,13 @@
-package model
+package noteModel
 
 import "time"
 
-type Note struct {
+// NoteDetail note详情，包含作者信息
+type NoteDetail struct {
 	Nid              string    `json:"nid" gorm:"column:nid"`
 	Uid              uint      `json:"uid" gorm:"column:uid"`
-	Cover            string    `json:"cover" gorm:"column:cover"`
-	CoverHeight      int       `json:"cover_height" gorm:"column:cover_height"`
+	AvatarUrl        string    `json:"avatarUrl" gorm:"column:avatarUrl"`
+	Username         string    `json:"username" gorm:"column:username"`
 	Pics             string    `json:"pics" gorm:"column:pics"`
 	Title            string    `json:"title" gorm:"column:title"`
 	Content          string    `json:"content" gorm:"column:content"`
@@ -20,9 +21,4 @@ type Note struct {
 	CollectionsCount uint      `json:"collectionsCount" gorm:"column:collections_count"`
 	SharesCount      uint      `json:"sharesCount" gorm:"column:shares_count"`
 	ViewsCount       uint      `json:"viewsCount" gorm:"column:views_count"`
-	Status           uint      `json:"status" gorm:"column:status default:1"`
-}
-
-func (Note) TableName() string {
-	return "notes"
 }

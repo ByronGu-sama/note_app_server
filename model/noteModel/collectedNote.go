@@ -1,4 +1,4 @@
-package model
+package noteModel
 
 type CollectedNotes struct {
 	Uid uint   `json:"uid" gorm:"uid"`

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"note_app_server/global"
-	"note_app_server/model"
+	"note_app_server/model/appModel"
 	"note_app_server/repository"
 	"note_app_server/response"
 	"note_app_server/service"
@@ -20,13 +20,15 @@ func TokenVerificationMiddleware() gin.HandlerFunc {
 		// 校验token有效性
 		if tokenStr == "" || err != nil {
 			response.RespondWithUnauthorized(ctx, "无访问权限")
+			ctx.Abort()
 			return
 		}
-		claims := temp.(*model.JWT)
+		claims := temp.(*appModel.JWT)
 		// 验证uid
 		uid := claims.Uid
 		if uid == 0 {
 			response.RespondWithUnauthorized(ctx, "无访问权限")
+			ctx.Abort()
 			return
 		}
 
@@ -34,14 +36,17 @@ func TokenVerificationMiddleware() gin.HandlerFunc {
 		_, err = global.TokenRdb.Get(rCtx, strconv.Itoa(int(uid))).Result()
 		if errors.Is(err, redis.Nil) {
 			response.RespondWithStatusBadRequest(ctx, "登陆已过期")
+			ctx.Abort()
 			return
 		} else if err != nil {
 			response.RespondWithStatusInternalServerError(ctx, "服务器内部错误")
+			ctx.Abort()
 			return
 		}
 
 		if _, err := repository.GetUserInfo(uid); err != nil {
 			response.RespondWithUnauthorized(ctx, "无访问权限")
+			ctx.Abort()
 			return
 		}
 

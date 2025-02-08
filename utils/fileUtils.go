@@ -9,14 +9,14 @@ import (
 	"net/http"
 )
 
-// EncodeNoteId 加密笔记id
-func EncodeNoteId(name string) string {
+// EncodeWithMD5 加密笔记id
+func EncodeWithMD5(name string) string {
 	hash := md5.Sum([]byte(name))
 	return hex.EncodeToString(hash[:])
 }
 
-// EncodePicsName 加密图片名称
-func EncodePicsName(name string) string {
+// EncodeWithSHA256 加密图片名称
+func EncodeWithSHA256(name string) string {
 	hash := sha256.Sum256([]byte(name))
 	return hex.EncodeToString(hash[:])
 }
