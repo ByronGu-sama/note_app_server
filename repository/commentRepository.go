@@ -35,7 +35,11 @@ func NewComment(cmt *commentModel.Comment, cmtInfo *commentModel.CommentsInfo) e
 }
 
 // DeleteComment 删除评论
-func DeleteComment(uid uint, cid, nid string) error {
+func DeleteComment(uid uint, cid string) error {
+	cmt := new(commentModel.Comment)
+	if err := global.Db.Where("cid = ? and uid = ?", cid, uid).First(&cmt).Error; err != nil {
+		return err
+	}
 	tx := global.Db.Begin()
 	result := tx.Model(&commentModel.Comment{}).Where("cid = ? and uid = ?", cid, uid).Delete(&commentModel.Comment{})
 	if result.RowsAffected == 0 {
@@ -47,7 +51,7 @@ func DeleteComment(uid uint, cid, nid string) error {
 		return result.Error
 	}
 
-	result = tx.Model(&noteModel.NoteInfo{}).Where("nid = ?", nid).UpdateColumn("comments_count", gorm.Expr("comments_count - ?", 1))
+	result = tx.Model(&noteModel.NoteInfo{}).Where("nid = ?", cmt.Nid).UpdateColumn("comments_count", gorm.Expr("comments_count - ?", 1))
 	if result.Error != nil {
 		tx.Rollback()
 		return result.Error
@@ -92,12 +96,12 @@ func LikeComment(uid uint, cid string) error {
 func DislikeComment(uid uint, cid string) error {
 	if err := global.Db.Where("uid = ? and cid = ?", uid, cid).First(&commentModel.LikedComment{}).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return errors.New("未点赞")
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+	} else if err != nil {
 		return err
 	}
 
 	tx := global.Db.Begin()
-	result := tx.Delete(&commentModel.LikedComment{Uid: uid, Cid: cid})
+	result := tx.Where("uid = ? and cid = ?", uid, cid).Delete(&commentModel.LikedComment{})
 	if result.Error != nil {
 		tx.Rollback()
 		return result.Error

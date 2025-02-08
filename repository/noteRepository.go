@@ -9,7 +9,7 @@ import (
 
 // GetNoteWithNid 获取笔记详情
 func GetNoteWithNid(nid string) (*noteModel.NoteDetail, error) {
-	var note *noteModel.NoteDetail
+	note := new(noteModel.NoteDetail)
 	if err := global.Db.Raw("select n.nid as nid, u.uid as uid, u.avatarUrl as avatarUrl, u.username as username, n.pics as pics, n.title as title, n.content as content, n.created_at as created_at, n.updated_at as updated_at, n.public as public, n.category_id as categoryId, n.tags as tags, ni.likes_count as likes_count, ni.comments_count as comments_count, ni.collections_count as collections_count, ni.shares_count as shares_count, ni.views_count as views_count from notes n join user_info u on n.uid = u.uid join notes_info ni on ni.nid = n.nid where n.status = 1 and n.nid = ?", nid).Scan(&note).Error; err != nil {
 		return nil, err
 	}

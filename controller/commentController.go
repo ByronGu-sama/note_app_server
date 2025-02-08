@@ -52,13 +52,12 @@ func DelComment(ctx *gin.Context) {
 		return
 	}
 	cid := ctx.Param("cid")
-	nid := ctx.Param("nid")
-	if cid == "" || nid == "" {
+	if cid == "" {
 		response.RespondWithStatusBadRequest(ctx, "缺少信息")
 		return
 	}
 
-	if err := repository.DeleteComment(uid.(uint), cid, nid); err != nil {
+	if err := repository.DeleteComment(uid.(uint), cid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return
 	}
@@ -108,5 +107,16 @@ func CancelLikeComment(ctx *gin.Context) {
 
 // GetCommentList 获取评论列表
 func GetCommentList(ctx *gin.Context) {
+	//uid, ok := ctx.Get("uid")
+	//if !ok {
+	//	response.RespondWithStatusBadRequest(ctx, "获取uid失败")
+	//	return
+	//}
+	//
+	//nid := ctx.Param("nid")
+	//if nid == "" {
+	//	response.RespondWithStatusBadRequest(ctx, "缺少信息")
+	//	return
+	//}
 
 }
