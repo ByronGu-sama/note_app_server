@@ -155,7 +155,24 @@ func CancelCollectNote(nid string, uid uint) error {
 func GetNoteList(start, limit int) ([]noteModel.SurfaceNote, error) {
 	offset := (start - 1) * limit
 	var result []noteModel.SurfaceNote
-	res := global.Db.Model(&noteModel.SurfaceNote{}).Raw("select n.nid as nid, n.uid as uid, u.username as username, u.avatarUrl as avatarUrl, n.cover as cover, n.cover_height as cover_height, n.title as title, n.public as public, n.category_id as category_id, n.tags as tags, ni.likes_count as like_count from notes n join user_info u on n.uid = u.uid join notes_info ni on n.nid = ni.nid where n.status = 1 limit ?, ?", offset, limit).Scan(&result)
+	res := global.Db.Model(&noteModel.SurfaceNote{}).Raw(
+		`select 
+    			n.nid as nid,
+    			n.uid as uid,
+    			u.username as username,
+    			u.avatarUrl as avatarUrl,
+    			n.cover as cover,
+    			n.cover_height as cover_height,
+    			n.title as title, 
+    			n.public as public,
+    			n.category_id as category_id,
+    			n.tags as tags, 
+    			ni.likes_count as like_count
+			from notes n 
+			join user_info u on n.uid = u.uid 
+			join notes_info ni on n.nid = ni.nid 
+		 	where n.status = 1 limit ?, ?`,
+		offset, limit).Scan(&result)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -169,7 +186,23 @@ func GetNoteList(start, limit int) ([]noteModel.SurfaceNote, error) {
 func GetNoteListWithUid(uid uint, start, limit int) ([]noteModel.SurfaceNote, error) {
 	offset := (start - 1) * limit
 	var result []noteModel.SurfaceNote
-	res := global.Db.Model(&noteModel.SurfaceNote{}).Raw("select n.nid as nid, n.uid as uid, u.username as username,u.avatarUrl as avatarUrl, n.cover as cover, n.cover_height as cover_height, n.title as title, n.public as public, n.category_id as category_id, n.tags as tags, ni.likes_count as like_count from user_info u left join notes n on n.uid = u.uid join notes_info ni on n.uid = u.uid and ni.nid = n.nid where u.uid = ? limit ?, ?", uid, offset, limit).Scan(&result)
+	res := global.Db.Model(&noteModel.SurfaceNote{}).Raw(`
+		select n.nid as nid,
+		       n.uid as uid,
+		       u.username as username,
+		       u.avatarUrl as avatarUrl, 
+		       n.cover as cover,
+		       n.cover_height as cover_height,
+		       n.title as title,
+		       n.public as public,
+			   n.category_id as category_id,
+			   n.tags as tags,
+			   ni.likes_count as like_count 
+		from user_info u 
+		left join notes n on n.uid = u.uid 
+		join notes_info ni on ni.nid = n.nid 
+	  	where u.uid = ? limit ?, ?`,
+		uid, offset, limit).Scan(&result)
 	if res.Error != nil {
 		return nil, res.Error
 	}

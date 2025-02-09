@@ -125,6 +125,35 @@ func DislikeComment(uid uint, cid string) error {
 }
 
 // GetNoteCommentsList 获取笔记评论列表
-func GetNoteCommentsList() {
-
+func GetNoteCommentsList(nid string, page, limit int) ([]commentModel.CommentDetail, error) {
+	offset := (page - 1) * limit
+	var commentsList []commentModel.CommentDetail
+	if err := global.Db.Raw(`
+		WITH RECURSIVE CommentTree AS(
+		(SELECT * FROM comments WHERE parent_id IS NULL LIMIT ?, ?)
+		UNION ALL
+		SELECT c.* FROM comments c 
+		JOIN CommentTree ct ON ct.cid = c.parent_id) 
+			SELECT 
+				ctResult.cid AS cid, 
+				ctResult.nid AS nid, 
+				ctResult.uid AS uid, 
+				ui.username AS username, 
+				ui.avatarUrl AS avatar_url, 
+				ctResult.content AS content, 
+				ctResult.parent_id AS parent_id, 
+				ctResult.root_id AS root_id,
+				parentUser.username AS parent_username, 
+				ctResult.created_at AS created_at, 
+				ci.likes_count AS likes_count 
+		FROM CommentTree ctResult 
+		JOIN comments_info ci ON ctResult.cid = ci.cid 
+		JOIN user_info ui ON ui.uid = ctResult.uid 
+		LEFT JOIN comments parentComment ON parentComment.cid = ctResult.parent_id 
+		LEFT JOIN user_info parentUser ON parentUser.uid = parentComment.uid
+		WHERE ctResult.nid = ?`,
+		offset, limit, nid).Scan(&commentsList).Error; err != nil {
+		return nil, err
+	}
+	return commentsList, nil
 }

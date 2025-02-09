@@ -7,7 +7,8 @@ type Comment struct {
 	Nid       string    `json:"nid" gorm:"nid"`
 	Uid       uint      `json:"uid" gorm:"uid"`
 	Content   string    `json:"content" gorm:"content"`
-	ParentId  string    `json:"parent_id" gorm:"parent_id"`
+	ParentId  string    `json:"parent_id" gorm:"parent_id;default:null"`
+	RootId    string    `json:"root_id" gorm:"root_id"`
 	CreatedAt time.Time `json:"created_at" gorm:"created_at"`
 }
 

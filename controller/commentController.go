@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"math/rand/v2"
+	"net/http"
 	"note_app_server/model/commentModel"
 	"note_app_server/repository"
 	"note_app_server/response"
 	"note_app_server/utils"
+	"strconv"
 	"time"
 )
 
@@ -24,7 +26,7 @@ func NewComment(ctx *gin.Context) {
 		return
 	}
 
-	if cmt.Nid == "" || cmt.Content == "" {
+	if cmt.Nid == "" || cmt.Content == "" || cmt.RootId == "" {
 		response.RespondWithStatusBadRequest(ctx, "缺少信息")
 		return
 	}
@@ -107,16 +109,55 @@ func CancelLikeComment(ctx *gin.Context) {
 
 // GetCommentList 获取评论列表
 func GetCommentList(ctx *gin.Context) {
-	//uid, ok := ctx.Get("uid")
-	//if !ok {
-	//	response.RespondWithStatusBadRequest(ctx, "获取uid失败")
-	//	return
-	//}
-	//
-	//nid := ctx.Param("nid")
-	//if nid == "" {
-	//	response.RespondWithStatusBadRequest(ctx, "缺少信息")
-	//	return
-	//}
+	nid := ctx.Param("nid")
+	page := ctx.Query("page")
+	limit := ctx.Query("limit")
+	if nid == "" || page == "" || limit == "" {
+		response.RespondWithStatusBadRequest(ctx, "缺少信息")
+		return
+	}
+	truePage, err1 := strconv.Atoi(page)
+	if err1 != nil {
+		response.RespondWithStatusBadRequest(ctx, "参数错误")
+		return
+	}
+	trueLimit, err2 := strconv.Atoi(limit)
+	if err2 != nil {
+		response.RespondWithStatusBadRequest(ctx, "参数错误")
+		return
+	}
 
+	commentList, err := repository.GetNoteCommentsList(nid, truePage, trueLimit)
+	if err != nil {
+		return
+	}
+	commentMap := make(map[string]*commentModel.CommentDetail)
+
+	for _, comment := range commentList {
+		if comment.ParentId == "" {
+			if commentMap[comment.Cid] != nil {
+				copy(comment.Children, commentMap[comment.Cid].Children)
+				commentMap[comment.Cid].Children = comment.Children
+			} else {
+				comment.Children = make([]commentModel.CommentDetail, 0)
+				commentMap[comment.Cid] = &comment
+			}
+		} else {
+			if _, present := commentMap[comment.RootId]; !present {
+				commentMap[comment.RootId] = &commentModel.CommentDetail{}
+				commentMap[comment.RootId].Children = []commentModel.CommentDetail{comment}
+			} else {
+				commentMap[comment.RootId].Children = append(commentMap[comment.RootId].Children, comment)
+			}
+		}
+	}
+	rootArr := make([]commentModel.CommentDetail, 0)
+	for _, v := range commentMap {
+		rootArr = append(rootArr, *v)
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"message": "success",
+		"data":    rootArr,
+	})
 }

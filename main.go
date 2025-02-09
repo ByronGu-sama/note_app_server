@@ -7,7 +7,7 @@ import (
 
 func main() {
 	config.InitAppConfig()
-	//test.Test()
+	//test.TestG()
 	r := router.SetupRouter()
 	if err := r.Run(config.AC.App.Port); err != nil {
 		return
