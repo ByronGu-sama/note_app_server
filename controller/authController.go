@@ -100,7 +100,7 @@ func Login(ctx *gin.Context) {
 				response.RespondWithStatusBadRequest(ctx, "手机号/密码错误")
 				return
 			}
-			if token, err := service.GetToken(existedUser.Uid); err != nil {
+			if token, err := repository.GetToken(existedUser.Uid); err != nil {
 				response.RespondWithStatusBadRequest(ctx, "登陆失败")
 			} else {
 				ctx.JSON(http.StatusOK, gin.H{

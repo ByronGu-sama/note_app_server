@@ -10,6 +10,7 @@ import (
 	"note_app_server/repository"
 	"note_app_server/response"
 	"note_app_server/service"
+	"note_app_server/utils"
 )
 
 // GetAvatarUrl 获取代理头像地址
@@ -98,7 +99,7 @@ func GetUserInfo(ctx *gin.Context) {
 		return
 	} else {
 		userInfo = temp
-		userInfo.AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + userInfo.AvatarUrl
+		userInfo.AvatarUrl = utils.AddAvatarPrefix(userInfo.AvatarUrl)
 	}
 
 	if temp, err := repository.GetUserCreationInfo(uid); err != nil {

@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"note_app_server/config"
 )
 
 // EncodeWithMD5 加密笔记id
@@ -35,4 +36,14 @@ func DetectFileType(file *multipart.File) (string, error) {
 	// 检查文件类型
 	contentType := http.DetectContentType(buf)
 	return contentType, nil
+}
+
+// AddAvatarPrefix 添加头像url前缀
+func AddAvatarPrefix(url string) string {
+	return "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + url
+}
+
+// AddNotePicPrefix 添加笔记图片url前缀
+func AddNotePicPrefix(nid, url string) string {
+	return "http://" + config.AC.App.Host + config.AC.App.Port + "/note/pic/" + nid + "/" + url
 }

@@ -5,7 +5,6 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"note_app_server/global"
-	"note_app_server/utils"
 	"time"
 )
 
@@ -21,7 +20,7 @@ func InitMysqlConfig() {
 	}
 	sqlDB.SetMaxIdleConns(AC.Mysql.MaxIdleConns)
 	sqlDB.SetMaxOpenConns(AC.Mysql.MaxOpenConns)
-	duration, err := utils.AtoT(AC.Mysql.ConnMaxLifetime)
+	duration, err := time.ParseDuration(AC.Mysql.ConnMaxLifetime)
 	if err != nil {
 		sqlDB.SetConnMaxLifetime(time.Hour)
 	}

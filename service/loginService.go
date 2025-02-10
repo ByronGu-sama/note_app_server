@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"crypto/rand"
 	"errors"
 	"fmt"
@@ -9,27 +8,8 @@ import (
 	"log"
 	"note_app_server/global"
 	"note_app_server/model/appModel"
-	"note_app_server/repository"
-	"strconv"
 	"time"
 )
-
-// GetToken 获取用户相关的信息
-func GetToken(uid uint) (string, error) {
-	// 生成jwt并保存
-	token, err := GenerateJWT(uid)
-	if err != nil {
-		return "", err
-	}
-
-	rCtx := context.Background()
-	err = global.TokenRdb.Set(rCtx, strconv.Itoa(int(uid)), token, time.Hour*24*30).Err()
-	if err != nil {
-		return "", err
-	}
-	repository.UpdateLoginSuccessAt(uid)
-	return token, nil
-}
 
 // CheckAccountStatus 判断账户状态
 func CheckAccountStatus(status uint) error {

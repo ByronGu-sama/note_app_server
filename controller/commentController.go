@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"math/rand/v2"
 	"net/http"
+	"note_app_server/config"
 	"note_app_server/model/commentModel"
 	"note_app_server/repository"
 	"note_app_server/response"
@@ -26,7 +27,7 @@ func NewComment(ctx *gin.Context) {
 		return
 	}
 
-	if cmt.Nid == "" || cmt.Content == "" || cmt.RootId == "" {
+	if cmt.Nid == "" || cmt.Content == "" {
 		response.RespondWithStatusBadRequest(ctx, "缺少信息")
 		return
 	}
@@ -35,15 +36,22 @@ func NewComment(ctx *gin.Context) {
 	cmt.Cid = cid
 	cmt.Uid = uid.(uint)
 	cmt.CreatedAt = time.Now()
+	if cmt.RootId == "" {
+		cmt.RootId = cid
+	}
 
-	cmtInfo := &commentModel.CommentsInfo{cid, 0}
+	cmtInfo := &commentModel.CommentsInfo{Cid: cid, LikesCount: 0}
 
-	err := repository.NewComment(cmt, cmtInfo)
+	result, err := repository.NewComment(cmt, cmtInfo)
 	if err != nil {
 		response.RespondWithStatusBadRequest(ctx, "评论失败")
 		return
 	}
-	response.RespondWithStatusOK(ctx, "已发送评论")
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"message": "获取成功",
+		"data":    result,
+	})
 }
 
 // DelComment 删除评论
@@ -126,7 +134,6 @@ func GetCommentList(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "参数错误")
 		return
 	}
-
 	commentList, err := repository.GetNoteCommentsList(nid, truePage, trueLimit)
 	if err != nil {
 		return
@@ -138,11 +145,14 @@ func GetCommentList(ctx *gin.Context) {
 			if commentMap[comment.Cid] != nil {
 				copy(comment.Children, commentMap[comment.Cid].Children)
 				commentMap[comment.Cid].Children = comment.Children
+				commentMap[comment.Cid].AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + commentMap[comment.Cid].AvatarUrl
 			} else {
 				comment.Children = make([]commentModel.CommentDetail, 0)
+				comment.AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + comment.AvatarUrl
 				commentMap[comment.Cid] = &comment
 			}
 		} else {
+			comment.AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + comment.AvatarUrl
 			if _, present := commentMap[comment.RootId]; !present {
 				commentMap[comment.RootId] = &commentModel.CommentDetail{}
 				commentMap[comment.RootId].Children = []commentModel.CommentDetail{comment}

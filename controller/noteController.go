@@ -206,7 +206,7 @@ func GetNote(ctx *gin.Context) {
 	rawPicsList := strings.Split(note.Pics, ";")
 	picsList := make([]string, 0)
 	for _, pic := range rawPicsList {
-		picsList = append(picsList, "http://"+config.AC.App.Host+config.AC.App.Port+"/note/pic/"+nid+"/"+pic)
+		picsList = append(picsList, utils.AddNotePicPrefix(nid, pic))
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -215,7 +215,7 @@ func GetNote(ctx *gin.Context) {
 		"data": gin.H{
 			"nid":              note.Nid,
 			"uid":              note.Uid,
-			"avatarUrl":        note.AvatarUrl,
+			"avatarUrl":        utils.AddAvatarPrefix(note.AvatarUrl),
 			"username":         note.Username,
 			"pics":             picsList,
 			"title":            note.Title,
@@ -355,8 +355,8 @@ func GetNoteList(ctx *gin.Context) {
 	}
 
 	for i := range result {
-		result[i].AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + result[i].AvatarUrl
-		result[i].Cover = "http://" + config.AC.App.Host + config.AC.App.Port + "/note/pic/" + result[i].Nid + "/" + result[i].Cover
+		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl)
+		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -399,8 +399,8 @@ func GetMyNotes(ctx *gin.Context) {
 	}
 
 	for i := range result {
-		result[i].AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + result[i].AvatarUrl
-		result[i].Cover = "http://" + config.AC.App.Host + config.AC.App.Port + "/note/pic/" + result[i].Nid + "/" + result[i].Cover
+		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl)
+		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{

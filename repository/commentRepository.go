@@ -6,32 +6,50 @@ import (
 	"note_app_server/global"
 	"note_app_server/model/commentModel"
 	"note_app_server/model/noteModel"
+	"note_app_server/utils"
 )
 
 // NewComment 创建评论
-func NewComment(cmt *commentModel.Comment, cmtInfo *commentModel.CommentsInfo) error {
+func NewComment(cmt *commentModel.Comment, cmtInfo *commentModel.CommentsInfo) (*commentModel.CommentDetail, error) {
 	tx := global.Db.Begin()
 	if err := tx.Model(&commentModel.Comment{}).Create(cmt).Error; err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 	if err := tx.Model(&commentModel.CommentsInfo{}).Create(cmtInfo).Error; err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
 	result := tx.Model(&noteModel.NoteInfo{}).Where("nid = ?", cmt.Nid).UpdateColumn("comments_count", gorm.Expr("comments_count + ?", 1))
 	if result.Error != nil {
 		tx.Rollback()
-		return result.Error
+		return nil, result.Error
 	}
 	if result.RowsAffected == 0 {
 		tx.Rollback()
-		return errors.New("更新数据失败")
+		return nil, errors.New("更新数据失败")
 	}
-
 	tx.Commit()
-	return nil
+	var newComment *commentModel.CommentDetail
+	if err := global.Db.Raw(`SELECT 
+    c.cid AS cid,
+    c.nid AS nid,
+    c.uid AS uid,
+    ui.username AS username,
+    ui.avatarUrl AS avatar_url,
+    c.content AS content,
+    c.root_id AS root_id,
+    c.created_at AS created_at,
+    ci.likes_count AS likes_count
+FROM user_info ui 
+    left join comments c on ui.uid = c.uid 
+    left join comments_info ci on c.cid = ci.cid
+where c.cid = ?`, cmt.Cid).First(&newComment).Error; err != nil {
+		return nil, err
+	}
+	newComment.AvatarUrl = utils.AddAvatarPrefix(newComment.AvatarUrl)
+	return newComment, nil
 }
 
 // DeleteComment 删除评论
@@ -134,18 +152,18 @@ func GetNoteCommentsList(nid string, page, limit int) ([]commentModel.CommentDet
 		UNION ALL
 		SELECT c.* FROM comments c 
 		JOIN CommentTree ct ON ct.cid = c.parent_id) 
-			SELECT 
-				ctResult.cid AS cid, 
-				ctResult.nid AS nid, 
-				ctResult.uid AS uid, 
-				ui.username AS username, 
-				ui.avatarUrl AS avatar_url, 
-				ctResult.content AS content, 
-				ctResult.parent_id AS parent_id, 
-				ctResult.root_id AS root_id,
-				parentUser.username AS parent_username, 
-				ctResult.created_at AS created_at, 
-				ci.likes_count AS likes_count 
+		SELECT 
+			ctResult.cid AS cid, 
+			ctResult.nid AS nid, 
+			ctResult.uid AS uid, 
+			ui.username AS username, 
+			ui.avatarUrl AS avatar_url, 
+			ctResult.content AS content, 
+			ctResult.parent_id AS parent_id, 
+			ctResult.root_id AS root_id,
+			parentUser.username AS parent_username, 
+			ctResult.created_at AS created_at, 
+			ci.likes_count AS likes_count 
 		FROM CommentTree ctResult 
 		JOIN comments_info ci ON ctResult.cid = ci.cid 
 		JOIN user_info ui ON ui.uid = ctResult.uid 

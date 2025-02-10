@@ -4,7 +4,6 @@ import (
 	"github.com/spf13/viper"
 	"log"
 	"note_app_server/model/appModel"
-	"note_app_server/service"
 	"sync"
 )
 
@@ -26,7 +25,7 @@ func InitAppConfig() {
 	var once sync.Once
 	var wg sync.WaitGroup
 	once.Do(func() {
-		wg.Add(4)
+		wg.Add(3)
 		go func() {
 			defer wg.Done()
 			InitMysqlConfig()
@@ -38,10 +37,6 @@ func InitAppConfig() {
 		go func() {
 			defer wg.Done()
 			InitRedisConfig()
-		}()
-		go func() {
-			defer wg.Done()
-			service.CreateJWTKey()
 		}()
 	})
 	wg.Wait()

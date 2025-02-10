@@ -1,10 +1,30 @@
 package repository
 
 import (
+	"context"
 	"note_app_server/global"
 	"note_app_server/model/userModel"
+	"note_app_server/service"
+	"strconv"
 	"time"
 )
+
+// GetToken 获取用户相关的信息
+func GetToken(uid uint) (string, error) {
+	// 生成jwt并保存
+	token, err := service.GenerateJWT(uid)
+	if err != nil {
+		return "", err
+	}
+
+	rCtx := context.Background()
+	err = global.TokenRdb.Set(rCtx, strconv.Itoa(int(uid)), token, time.Hour*24*30).Err()
+	if err != nil {
+		return "", err
+	}
+	UpdateLoginSuccessAt(uid)
+	return token, nil
+}
 
 // GetUserInfo 获取用户基本信息
 func GetUserInfo(uid uint) (*userModel.UserInfo, error) {

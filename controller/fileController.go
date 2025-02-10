@@ -50,6 +50,6 @@ func UploadUserAvatar(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"code":      http.StatusOK,
 		"message":   "上传成功",
-		"avatarUrl": "http://localhost:8081/avatar/" + fileName,
+		"avatarUrl": utils.AddAvatarPrefix(fileName),
 	})
 }
