@@ -104,7 +104,7 @@ func NewNote(ctx *gin.Context) {
 					coverHeight = math.Round(100.0/float64(width)*float64(height)*100) / 100
 				}
 
-				fileName, err3 := service.UploadFileObject(config.AC.Oss.BucketName, "notePics/"+noteId+"/", openFile, fileType)
+				fileName, err3 := service.UploadFileObject(config.AC.Oss.NotePicsBucket, noteId+"/", openFile, fileType)
 				// 获取封面
 				if req.index == 0 {
 					cover = fileName
@@ -238,7 +238,7 @@ func GetNote(ctx *gin.Context) {
 func GetNotePic(ctx *gin.Context) {
 	nid := ctx.Param("nid")
 	fileName := ctx.Param("fileName")
-	reader, err := service.GetOssObject(config.AC.Oss.BucketName, "notePics/"+nid+"/", fileName)
+	reader, err := service.GetOssObject(config.AC.Oss.NotePicsBucket, nid+"/", fileName)
 
 	if err != nil {
 		response.RespondWithStatusBadRequest(ctx, "获取Oss服务失败")

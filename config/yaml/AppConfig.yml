@@ -35,6 +35,7 @@ redis:
     # 从连接池中获取连接最大等待时间（默认为-1，单位为毫秒，负数表示无限）
     maxWait: 1500
 oss:
-  bucketName: "note-app-oss-server"
+  avatarBucket: "note-app-oss-avatar"
+  notePicsBucket: "note-app-oss-note-pics"
   endPoint: "oss-cn-shanghai.aliyuncs.com"
   region: "cn-shanghai"

@@ -147,30 +147,52 @@ func GetNoteCommentsList(nid string, page, limit int) ([]commentModel.CommentDet
 	offset := (page - 1) * limit
 	var commentsList []commentModel.CommentDetail
 	if err := global.Db.Raw(`
-		WITH RECURSIVE CommentTree AS(
-		(SELECT * FROM comments WHERE parent_id IS NULL LIMIT ?, ?)
-		UNION ALL
-		SELECT c.* FROM comments c 
-		JOIN CommentTree ct ON ct.cid = c.parent_id) 
-		SELECT 
-			ctResult.cid AS cid, 
-			ctResult.nid AS nid, 
-			ctResult.uid AS uid, 
-			ui.username AS username, 
-			ui.avatarUrl AS avatar_url, 
-			ctResult.content AS content, 
-			ctResult.parent_id AS parent_id, 
-			ctResult.root_id AS root_id,
-			parentUser.username AS parent_username, 
-			ctResult.created_at AS created_at, 
-			ci.likes_count AS likes_count 
-		FROM CommentTree ctResult 
-		JOIN comments_info ci ON ctResult.cid = ci.cid 
-		JOIN user_info ui ON ui.uid = ctResult.uid 
-		LEFT JOIN comments parentComment ON parentComment.cid = ctResult.parent_id 
-		LEFT JOIN user_info parentUser ON parentUser.uid = parentComment.uid
-		WHERE ctResult.nid = ?`,
-		offset, limit, nid).Scan(&commentsList).Error; err != nil {
+		SELECT
+			c.cid AS cid,
+			c.nid AS nid,
+			c.uid AS uid,
+			ui.username AS username,
+			ui.avatarUrl AS avatar_url,
+			c.content AS content,
+			c.parent_id AS parent_id,
+			c.root_id AS root_id,
+			c.created_at AS created_at,
+			ci.likes_count AS likes_count
+		FROM comments c
+		JOIN comments_info ci ON c.cid = ci.cid
+		JOIN user_info ui ON ui.uid = c.uid
+		where c.nid = ? and c.parent_id is null limit ?, ?`,
+		nid, offset, limit).Scan(&commentsList).Error; err != nil {
+		return nil, err
+	}
+	return commentsList, nil
+}
+
+// GetSubCommentsList 获取子评论
+func GetSubCommentsList(nid, rootId string, page, limit int) ([]commentModel.CommentDetail, error) {
+	offset := (page - 1) * limit
+	var commentsList []commentModel.CommentDetail
+	if err := global.Db.Raw(`
+		SELECT
+			c.cid AS cid,
+			c.nid AS nid,
+			c.uid AS uid,
+			ui.username AS username,
+			ui.avatarUrl AS avatar_url,
+			c.content AS content,
+			c.parent_id AS parent_id,
+			parent_ui.username AS parent_username,
+			c.root_id AS root_id,
+			c.created_at AS created_at,
+			ci.likes_count AS likes_count
+		FROM comments c
+		JOIN comments_info ci ON c.cid = ci.cid
+		JOIN user_info ui ON ui.uid = c.uid
+		LEFT JOIN comments parent_c ON parent_c.cid = c.parent_id
+		LEFT JOIN user_info parent_ui ON parent_ui.uid = parent_c.uid
+		where c.nid = ? and c.root_id = ? and c.root_id != c.cid and c.parent_id is not null limit ?, ?
+		`,
+		nid, rootId, offset, limit).Scan(&commentsList).Error; err != nil {
 		return nil, err
 	}
 	return commentsList, nil

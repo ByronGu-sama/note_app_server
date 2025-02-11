@@ -1,9 +1,15 @@
 package utils
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -46,4 +52,36 @@ func AddAvatarPrefix(url string) string {
 // AddNotePicPrefix 添加笔记图片url前缀
 func AddNotePicPrefix(nid, url string) string {
 	return "http://" + config.AC.App.Host + config.AC.App.Port + "/note/pic/" + nid + "/" + url
+}
+
+// CompressJPEGPic 压缩jpeg图片
+func CompressJPEGPic(file io.Reader, quality int) ([]byte, error) {
+	img, err := jpeg.Decode(file)
+	if err != nil {
+		return nil, err
+	}
+	buf := new(bytes.Buffer)
+	err = jpeg.Encode(buf, img, &jpeg.Options{Quality: quality})
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// CompressPNGPic 压缩png图片
+func CompressPNGPic(file io.Reader, quality int) ([]byte, error) {
+	img, err := png.Decode(file)
+	if err != nil {
+		return nil, err
+	}
+	newImg := image.NewRGBA(img.Bounds())
+	draw.Draw(newImg, newImg.Bounds(), &image.Uniform{C: color.White}, image.Point{}, draw.Src)
+	draw.Draw(newImg, newImg.Bounds(), img, img.Bounds().Min, draw.Over)
+
+	buf := new(bytes.Buffer)
+	err = jpeg.Encode(buf, newImg, &jpeg.Options{Quality: quality})
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

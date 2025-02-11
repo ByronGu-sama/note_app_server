@@ -96,6 +96,9 @@ func SetupRouter() *gin.Engine {
 		comment.GET("/getList/:nid", func(ctx *gin.Context) {
 			controller.GetCommentList(ctx)
 		})
+		comment.GET("/getSubList/:nid/:rootId", func(ctx *gin.Context) {
+			controller.GetSubCommentList(ctx)
+		})
 		comment.DELETE("/delComment/:cid", func(ctx *gin.Context) {
 			controller.DelComment(ctx)
 		})

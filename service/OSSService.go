@@ -52,8 +52,16 @@ func GetOssObject(bucketName, pathPrefix, objectName string) (io.ReadCloser, err
 		return nil, err
 	}
 
+	avatarStyle := "style/compress_avatar"
+	var object io.ReadCloser
+	var err1 error
 	// 获取输入流
-	object, err1 := bucket.GetObject(pathPrefix + objectName)
+	if bucketName == "note-app-oss-avatar" {
+		object, err1 = bucket.GetObject(pathPrefix+objectName, oss.Process(avatarStyle))
+	} else {
+		object, err1 = bucket.GetObject(pathPrefix + objectName)
+	}
+
 	if err1 != nil {
 		return nil, err1
 	} else {

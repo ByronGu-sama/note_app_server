@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"math/rand/v2"
 	"net/http"
-	"note_app_server/config"
 	"note_app_server/model/commentModel"
 	"note_app_server/repository"
 	"note_app_server/response"
@@ -138,32 +137,48 @@ func GetCommentList(ctx *gin.Context) {
 	if err != nil {
 		return
 	}
-	commentMap := make(map[string]*commentModel.CommentDetail)
 
-	for _, comment := range commentList {
-		if comment.ParentId == "" {
-			if commentMap[comment.Cid] != nil {
-				copy(comment.Children, commentMap[comment.Cid].Children)
-				commentMap[comment.Cid].Children = comment.Children
-				commentMap[comment.Cid].AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + commentMap[comment.Cid].AvatarUrl
-			} else {
-				comment.Children = make([]commentModel.CommentDetail, 0)
-				comment.AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + comment.AvatarUrl
-				commentMap[comment.Cid] = &comment
-			}
-		} else {
-			comment.AvatarUrl = "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + comment.AvatarUrl
-			if _, present := commentMap[comment.RootId]; !present {
-				commentMap[comment.RootId] = &commentModel.CommentDetail{}
-				commentMap[comment.RootId].Children = []commentModel.CommentDetail{comment}
-			} else {
-				commentMap[comment.RootId].Children = append(commentMap[comment.RootId].Children, comment)
-			}
-		}
-	}
 	rootArr := make([]commentModel.CommentDetail, 0)
-	for _, v := range commentMap {
-		rootArr = append(rootArr, *v)
+	for _, v := range commentList {
+		v.AvatarUrl = utils.AddAvatarPrefix(v.AvatarUrl)
+		rootArr = append(rootArr, v)
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"message": "success",
+		"data":    rootArr,
+	})
+}
+
+// GetSubCommentList 获取子评论列表
+func GetSubCommentList(ctx *gin.Context) {
+	nid := ctx.Param("nid")
+	rootId := ctx.Param("rootId")
+	page := ctx.Query("page")
+	limit := ctx.Query("limit")
+	if nid == "" || rootId == "" || page == "" || limit == "" {
+		response.RespondWithStatusBadRequest(ctx, "缺少信息")
+		return
+	}
+	truePage, err1 := strconv.Atoi(page)
+	if err1 != nil {
+		response.RespondWithStatusBadRequest(ctx, "参数错误")
+		return
+	}
+	trueLimit, err2 := strconv.Atoi(limit)
+	if err2 != nil {
+		response.RespondWithStatusBadRequest(ctx, "参数错误")
+		return
+	}
+	commentList, err := repository.GetSubCommentsList(nid, rootId, truePage, trueLimit)
+	if err != nil {
+		return
+	}
+
+	rootArr := make([]commentModel.CommentDetail, 0)
+	for _, v := range commentList {
+		v.AvatarUrl = utils.AddAvatarPrefix(v.AvatarUrl)
+		rootArr = append(rootArr, v)
 	}
 	ctx.JSON(http.StatusOK, gin.H{
 		"code":    http.StatusOK,

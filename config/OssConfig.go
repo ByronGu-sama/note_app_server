@@ -9,11 +9,12 @@ import (
 
 // InitOssConfig 初始化Oss配置
 func InitOssConfig() {
-	bucketName := AC.Oss.BucketName
+	avatarBucket := AC.Oss.AvatarBucket
+	notePicsBucket := AC.Oss.NotePicsBucket
 	endPoint := AC.Oss.EndPoint
 	region := AC.Oss.Region
 
-	if endPoint == "" || bucketName == "" {
+	if endPoint == "" || avatarBucket == "" || notePicsBucket == "" {
 		log.Fatal("Please set yourEndpoint and bucketName.")
 	}
 

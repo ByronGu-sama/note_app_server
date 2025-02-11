@@ -41,7 +41,7 @@ func UploadUserAvatar(ctx *gin.Context) {
 	}
 
 	// 上传文件至oss
-	fileName, err1 := service.UploadFileObject(config.AC.Oss.BucketName, "tempAvatar/", openFile, contentType)
+	fileName, err1 := service.UploadFileObject(config.AC.Oss.AvatarBucket, "tempAvatar/", openFile, contentType)
 	if err1 != nil {
 		response.RespondWithStatusBadRequest(ctx, err1.Error())
 		return

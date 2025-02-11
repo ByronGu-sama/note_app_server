@@ -29,8 +29,9 @@ type AppConfig struct {
 		}
 	}
 	Oss struct {
-		BucketName string
-		EndPoint   string
-		Region     string
+		AvatarBucket   string
+		NotePicsBucket string
+		EndPoint       string
+		Region         string
 	}
 }

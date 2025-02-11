@@ -16,7 +16,7 @@ import (
 // GetAvatarUrl 获取代理头像地址
 func GetAvatarUrl(ctx *gin.Context) {
 	fileName := ctx.Param("fileName")
-	reader, err := service.GetOssObject(config.AC.Oss.BucketName, "avatar/", fileName)
+	reader, err := service.GetOssObject(config.AC.Oss.AvatarBucket, "avatar/", fileName)
 
 	if err != nil {
 		response.RespondWithStatusBadRequest(ctx, "获取Oss服务失败")
@@ -50,20 +50,20 @@ func ChangeAvatar(ctx *gin.Context) {
 	}
 	uid, _ := ctx.Get("uid")
 	// 判断用户是否已上传头像
-	exist, err1 := service.HasObject(config.AC.Oss.BucketName, "tempAvatar/", avatarUrl)
+	exist, err1 := service.HasObject(config.AC.Oss.AvatarBucket, "tempAvatar/", avatarUrl)
 	if err1 != nil {
 		response.RespondWithStatusBadRequest(ctx, err1.Error())
 		return
 	}
 	if exist {
 		// 将头像从temp文件夹转移至常规文件夹
-		err := service.CopyObjectToAnother(config.AC.Oss.BucketName, "tempAvatar/"+avatarUrl, "avatar/"+avatarUrl)
+		err := service.CopyObjectToAnother(config.AC.Oss.AvatarBucket, "tempAvatar/"+avatarUrl, "avatar/"+avatarUrl)
 		if err != nil {
 			response.RespondWithStatusBadRequest(ctx, err.Error())
 			return
 		}
 		// 从temp文件夹中删除文件
-		err = service.DeleteObject(config.AC.Oss.BucketName, "tempAvatar/", avatarUrl)
+		err = service.DeleteObject(config.AC.Oss.AvatarBucket, "tempAvatar/", avatarUrl)
 		if err != nil {
 			response.RespondWithStatusBadRequest(ctx, err.Error())
 			return
