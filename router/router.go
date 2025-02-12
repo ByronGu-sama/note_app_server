@@ -41,12 +41,6 @@ func SetupRouter() *gin.Engine {
 		avatar.GET("/:fileName", func(ctx *gin.Context) {
 			controller.GetAvatarUrl(ctx)
 		})
-		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/upload", func(ctx *gin.Context) {
-			controller.UploadUserAvatar(ctx)
-		})
-		avatar.Use(middleware.TokenVerificationMiddleware()).POST("/change", func(ctx *gin.Context) {
-			controller.ChangeAvatar(ctx)
-		})
 	}
 
 	note := r.Group("/note")
@@ -107,6 +101,20 @@ func SetupRouter() *gin.Engine {
 		})
 		comment.GET("/dislike/:cid", func(ctx *gin.Context) {
 			controller.CancelLikeComment(ctx)
+		})
+	}
+
+	style := r.Group("/style")
+	style.GET("/profileBanner/:bid", func(ctx *gin.Context) {
+		controller.GetProfileBannerUrl(ctx)
+	})
+	style.Use(middleware.TokenVerificationMiddleware())
+	{
+		style.POST("/updateProfileBanner", func(ctx *gin.Context) {
+			controller.UpdateProfileBanner(ctx)
+		})
+		style.GET("", func(ctx *gin.Context) {
+			controller.GetStyle(ctx)
 		})
 	}
 

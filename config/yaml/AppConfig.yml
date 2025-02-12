@@ -37,5 +37,6 @@ redis:
 oss:
   avatarBucket: "note-app-oss-avatar"
   notePicsBucket: "note-app-oss-note-pics"
+  styleBucket: "note-app-oss-style"
   endPoint: "oss-cn-shanghai.aliyuncs.com"
   region: "cn-shanghai"

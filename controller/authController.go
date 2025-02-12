@@ -41,40 +41,11 @@ func Register(ctx *gin.Context) {
 	}
 
 	user.Password = string(hashedPassword)
-	// 使用事务创建用户登录信息
-	tx := global.Db.Begin()
-	if err := tx.Create(&user).Error; err != nil {
-		tx.Rollback()
-		response.RespondWithStatusInternalServerError(ctx, "服务器内部错误")
+	if err = repository.RegisterUser(&user); err != nil {
+		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return
 	}
-	tx.Commit()
 
-	tx = global.Db.Begin()
-	newUser, err := repository.GetUserLoginInfoByPhone(user.Phone) //获取系统生成的用户uid
-	if err != nil {
-		tx.Rollback()
-		response.RespondWithStatusInternalServerError(ctx, "服务器内部错误")
-		return
-	}
-	var userInfo userModel.UserInfo
-	var userCreationInfo userModel.UserCreationInfo
-	userInfo.Uid = newUser.Uid
-	userInfo.AvatarUrl = "test.jpeg"
-	userCreationInfo.Uid = newUser.Uid
-	// 创建用户详细信息
-	if err := tx.Create(&userInfo).Error; err != nil {
-		tx.Rollback()
-		response.RespondWithStatusInternalServerError(ctx, "服务器内部错误")
-		return
-	}
-	// 创建用户创造者信息
-	if err := tx.Create(&userCreationInfo).Error; err != nil {
-		tx.Rollback()
-		response.RespondWithStatusInternalServerError(ctx, "服务器内部错误")
-		return
-	}
-	tx.Commit()
 	response.RespondWithStatusOK(ctx, "注册成功")
 }
 

@@ -31,6 +31,7 @@ type AppConfig struct {
 	Oss struct {
 		AvatarBucket   string
 		NotePicsBucket string
+		StyleBucket    string
 		EndPoint       string
 		Region         string
 	}

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"note_app_server/global"
 	"note_app_server/model/userModel"
 	"note_app_server/service"
@@ -56,19 +57,39 @@ func GetUserLoginInfoByPhone(phone string) (*userModel.UserLogin, error) {
 
 // UpdateUserInfo 更新用户信息
 func UpdateUserInfo(info *userModel.UserInfo) error {
+	tx := global.Db.Begin()
 	var userInfo *userModel.UserInfo
-	if err := global.Db.Model(userInfo).Where("uid = ?", info.Uid).Updates(map[string]interface{}{"username": info.Username, "age": info.Age, "birth": info.Birth, "gender": info.Gender, "signature": info.Signature, "address": info.Address}).Error; err != nil {
-		return err
+	if info.AvatarUrl == "" {
+		if err := tx.Model(userInfo).Where("uid = ?", info.Uid).Updates(map[string]interface{}{"username": info.Username, "birth": info.Birth, "gender": info.Gender, "signature": info.Signature}).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	} else {
+		if err := tx.Model(userInfo).Where("uid = ?", info.Uid).Updates(map[string]interface{}{"username": info.Username, "birth": info.Birth, "gender": info.Gender, "signature": info.Signature, "avatarUrl": info.AvatarUrl}).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
+	result := tx.Model(userInfo).Where("uid = ?", info.Uid).Update("updateAt", time.Now().Format("2006-01-02 15:04:05"))
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		return errors.New("更新时间失败")
+	}
+	if result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+	tx.Commit()
 	return nil
 }
 
-// UpdateUserAvatar 修改头像
-func UpdateUserAvatar(uid uint, avatarUrl string) error {
-	if err := global.Db.Model(&userModel.UserInfo{}).Where("uid = ?", uid).Updates(map[string]interface{}{"avatarUrl": avatarUrl}).Error; err != nil {
-		return err
+// GetLastAvatarUrl 查询旧头像地址
+func GetLastAvatarUrl(uid uint) (string, error) {
+	var userInfo *userModel.UserInfo
+	if err := global.Db.Where("uid = ?", uid).Select("avatarUrl").First(&userInfo).Error; err != nil {
+		return "", err
 	}
-	return nil
+	return userInfo.AvatarUrl, nil
 }
 
 // UpdateLoginFailedAt 记录上次登陆失败的时间

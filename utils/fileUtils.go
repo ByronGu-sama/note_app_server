@@ -44,14 +44,19 @@ func DetectFileType(file *multipart.File) (string, error) {
 	return contentType, nil
 }
 
-// AddAvatarPrefix 添加头像url前缀
+// AddAvatarPrefix 添加前端访问头像url前缀
 func AddAvatarPrefix(url string) string {
 	return "http://" + config.AC.App.Host + config.AC.App.Port + "/avatar/" + url
 }
 
-// AddNotePicPrefix 添加笔记图片url前缀
+// AddNotePicPrefix 添加前端访问笔记图片url前缀
 func AddNotePicPrefix(nid, url string) string {
 	return "http://" + config.AC.App.Host + config.AC.App.Port + "/note/pic/" + nid + "/" + url
+}
+
+// AddProfileBannerPrefix 添加前端访问用户页banner前缀
+func AddProfileBannerPrefix(url string) string {
+	return "http://" + config.AC.App.Host + config.AC.App.Port + "/style/profileBanner/" + url
 }
 
 // CompressJPEGPic 压缩jpeg图片
