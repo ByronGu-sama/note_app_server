@@ -9,7 +9,7 @@ import (
 func main() {
 	config.InitAppConfig()
 	service.CreateJWTKey()
-	//test.TestG()
+	//test.TestFileUtils()
 	r := router.SetupRouter()
 	if err := r.Run(config.AC.App.Port); err != nil {
 		return

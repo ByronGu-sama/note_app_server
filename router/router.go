@@ -9,6 +9,7 @@ import (
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.CorsMiddleware())
+
 	auth := r.Group("/auth")
 	{
 		auth.POST("/register", func(ctx *gin.Context) {
@@ -17,16 +18,22 @@ func SetupRouter() *gin.Engine {
 		auth.POST("/login", func(ctx *gin.Context) {
 			controller.Login(ctx)
 		})
-		auth.Use(middleware.TokenVerificationMiddleware()).GET("/checkToken", func(ctx *gin.Context) {
-			controller.CheckToken(ctx)
+		auth.POST("/verifyCaptcha", func(ctx *gin.Context) {
+			controller.CheckCaptcha(ctx)
 		})
-		auth.Use(middleware.TokenVerificationMiddleware()).POST("/logout", func(ctx *gin.Context) {
-			controller.Logout(ctx)
-		})
+
+		verification := auth.Group("").Use(middleware.TokenVerificationMiddleware())
+		{
+			verification.GET("/checkToken", func(ctx *gin.Context) {
+				controller.CheckToken(ctx)
+			})
+			verification.GET("/logout", func(ctx *gin.Context) {
+				controller.Logout(ctx)
+			})
+		}
 	}
 
-	userInfo := r.Group("/userInfo")
-	userInfo.Use(middleware.TokenVerificationMiddleware())
+	userInfo := r.Group("/userInfo").Use(middleware.TokenVerificationMiddleware())
 	{
 		userInfo.GET("", func(ctx *gin.Context) {
 			controller.GetUserInfo(ctx)
@@ -44,45 +51,49 @@ func SetupRouter() *gin.Engine {
 	}
 
 	note := r.Group("/note")
-	note.GET("/pic/:nid/:fileName", func(ctx *gin.Context) {
-		controller.GetNotePic(ctx)
-	})
-	note.Use(middleware.TokenVerificationMiddleware())
 	{
-		note.POST("", func(ctx *gin.Context) {
-			controller.NewNote(ctx)
+		note.GET("/pic/:nid/:fileName", func(ctx *gin.Context) {
+			controller.GetNotePic(ctx)
 		})
-		note.GET("/:nid", func(ctx *gin.Context) {
-			controller.GetNote(ctx)
-		})
-		note.PUT("", func(ctx *gin.Context) {
-			controller.EditNote(ctx)
-		})
-		note.DELETE("/:nid", func(ctx *gin.Context) {
-			controller.DelNote(ctx)
-		})
-		note.GET("/list", func(ctx *gin.Context) {
-			controller.GetNoteList(ctx)
-		})
-		note.GET("/myNotes", func(ctx *gin.Context) {
-			controller.GetMyNotes(ctx)
-		})
-		note.GET("/like/:nid", func(ctx *gin.Context) {
-			controller.LikeNote(ctx)
-		})
-		note.GET("/dislike/:nid", func(ctx *gin.Context) {
-			controller.DislikeNote(ctx)
-		})
-		note.GET("/collect/:nid", func(ctx *gin.Context) {
-			controller.CollectNote(ctx)
-		})
-		note.GET("/cancelCollect/:nid", func(ctx *gin.Context) {
-			controller.CancelCollectNote(ctx)
-		})
+		verification := note.Group("").Use(middleware.TokenVerificationMiddleware())
+		{
+			verification.GET("/:nid", func(ctx *gin.Context) {
+				controller.GetNote(ctx)
+			})
+			verification.PUT("", func(ctx *gin.Context) {
+				controller.EditNote(ctx)
+			})
+			verification.DELETE("/:nid", func(ctx *gin.Context) {
+				controller.DelNote(ctx)
+			})
+			verification.GET("/list", func(ctx *gin.Context) {
+				controller.GetNoteList(ctx)
+			})
+			verification.GET("/myNotes", func(ctx *gin.Context) {
+				controller.GetMyNotes(ctx)
+			})
+			verification.GET("/like/:nid", func(ctx *gin.Context) {
+				controller.LikeNote(ctx)
+			})
+			verification.GET("/dislike/:nid", func(ctx *gin.Context) {
+				controller.DislikeNote(ctx)
+			})
+			verification.GET("/collect/:nid", func(ctx *gin.Context) {
+				controller.CollectNote(ctx)
+			})
+			verification.GET("/cancelCollect/:nid", func(ctx *gin.Context) {
+				controller.CancelCollectNote(ctx)
+			})
+		}
+		checkFileType := note.Group("").Use(middleware.DetectNotePicsTypeMiddleware())
+		{
+			checkFileType.POST("", func(ctx *gin.Context) {
+				controller.NewNote(ctx)
+			})
+		}
 	}
 
-	comment := r.Group("/comment")
-	comment.Use(middleware.TokenVerificationMiddleware())
+	comment := r.Group("/comment").Use(middleware.TokenVerificationMiddleware())
 	{
 		comment.POST("", func(ctx *gin.Context) {
 			controller.NewComment(ctx)
@@ -105,17 +116,22 @@ func SetupRouter() *gin.Engine {
 	}
 
 	style := r.Group("/style")
-	style.GET("/profileBanner/:bid", func(ctx *gin.Context) {
-		controller.GetProfileBannerUrl(ctx)
-	})
-	style.Use(middleware.TokenVerificationMiddleware())
 	{
-		style.POST("/updateProfileBanner", func(ctx *gin.Context) {
-			controller.UpdateProfileBanner(ctx)
+		style.GET("/profileBanner/:bid", func(ctx *gin.Context) {
+			controller.GetProfileBannerUrl(ctx)
 		})
-		style.GET("", func(ctx *gin.Context) {
-			controller.GetStyle(ctx)
-		})
+		verification := style.Group("").Use(middleware.TokenVerificationMiddleware())
+		{
+			verification.GET("", func(ctx *gin.Context) {
+				controller.GetStyle(ctx)
+			})
+		}
+		checkImageType := style.Group("").Use(middleware.DetectNormalImageTypeMiddleware())
+		{
+			checkImageType.POST("/updateProfileBanner", func(ctx *gin.Context) {
+				controller.UpdateProfileBanner(ctx)
+			})
+		}
 	}
 
 	return r

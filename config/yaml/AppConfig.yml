@@ -34,9 +34,15 @@ redis:
     minIdle: 2
     # 从连接池中获取连接最大等待时间（默认为-1，单位为毫秒，负数表示无限）
     maxWait: 1500
+es:
+  host: localhost
+  port: 9200
 oss:
   avatarBucket: "note-app-oss-avatar"
   notePicsBucket: "note-app-oss-note-pics"
   styleBucket: "note-app-oss-style"
   endPoint: "oss-cn-shanghai.aliyuncs.com"
   region: "cn-shanghai"
+captcha:
+  endPoint: "captcha.cn-shanghai.aliyuncs.com"
+  sceneId: "note_app_register_login8wchsj1b"

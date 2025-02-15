@@ -25,7 +25,7 @@ func InitAppConfig() {
 	var once sync.Once
 	var wg sync.WaitGroup
 	once.Do(func() {
-		wg.Add(3)
+		wg.Add(5)
 		go func() {
 			defer wg.Done()
 			InitMysqlConfig()
@@ -36,7 +36,15 @@ func InitAppConfig() {
 		}()
 		go func() {
 			defer wg.Done()
+			InitCaptchaConfig()
+		}()
+		go func() {
+			defer wg.Done()
 			InitRedisConfig()
+		}()
+		go func() {
+			defer wg.Done()
+			InitElasticSearchConfig()
 		}()
 	})
 	wg.Wait()

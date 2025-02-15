@@ -5,14 +5,13 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/gabriel-vasile/mimetype"
 	"image"
 	"image/color"
 	"image/draw"
 	"image/jpeg"
 	"image/png"
 	"io"
-	"mime/multipart"
-	"net/http"
 	"note_app_server/config"
 )
 
@@ -28,20 +27,26 @@ func EncodeWithSHA256(name string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-// DetectFileType 检查文件类型
-func DetectFileType(file *multipart.File) (string, error) {
-	// 读取文件前512字节的数据
-	buf := make([]byte, 512)
-	if _, err := (*file).Read(buf); err != nil {
-		return "", err
+// DetectFileType 返回文件类型
+func DetectFileType(file []byte) string {
+	fileType := mimetype.Detect(file).String()
+	if fileType == "image/png" {
+		fileType = "png"
 	}
-	// 重置文件读取指针
-	if _, err := (*file).Seek(0, io.SeekStart); err != nil {
-		return "", err
+	if fileType == "image/jpeg" {
+		fileType = "jpeg"
 	}
-	// 检查文件类型
-	contentType := http.DetectContentType(buf)
-	return contentType, nil
+	if fileType == "image/webp" {
+		fileType = "webp"
+	}
+	if fileType == "image/heic" {
+		fileType = "heic"
+	}
+	if fileType == "image/heif" {
+		fileType = "heif"
+	}
+
+	return fileType
 }
 
 // AddAvatarPrefix 添加前端访问头像url前缀

@@ -129,22 +129,18 @@ func UpdateUserInfo(ctx *gin.Context) {
 			return
 		}
 
-		// 检查文件类型
-		contentType, err3 := utils.DetectFileType(&openFile)
+		all, err3 := io.ReadAll(openFile)
 		if err3 != nil {
 			response.RespondWithStatusBadRequest(ctx, err3.Error())
 			return
 		}
-		if contentType != "image/jpeg" && contentType != "image/png" {
-			response.RespondWithStatusBadRequest(ctx, "不支持的文件类型")
+		if _, err4 := (openFile).Seek(0, io.SeekStart); err4 != nil {
+			response.RespondWithStatusBadRequest(ctx, err4.Error())
 			return
 		}
-		if contentType == "image/png" {
-			contentType = "png"
-		}
-		if contentType == "image/jpeg" {
-			contentType = "jpeg"
-		}
+
+		// 检查文件类型
+		contentType := utils.DetectFileType(all)
 
 		oldAvatar, err = repository.GetLastAvatarUrl(uid)
 		if err != nil {

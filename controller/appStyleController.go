@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"
-	"mime/multipart"
 	"net/http"
 	"note_app_server/config"
 	"note_app_server/repository"
@@ -49,36 +48,32 @@ func UpdateProfileBanner(ctx *gin.Context) {
 		return
 	}
 
-	bannerFile, err1 := ctx.FormFile("banner")
+	bannerFile, err1 := ctx.FormFile("file")
 	if err1 != nil {
 		response.RespondWithStatusBadRequest(ctx, err1.Error())
 		return
 	}
 
 	openBanner, err2 := bannerFile.Open()
-	defer func(openBanner multipart.File) {
-		err := openBanner.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(openBanner)
+	defer openBanner.Close()
 
 	if err2 != nil {
 		response.RespondWithStatusBadRequest(ctx, err2.Error())
 		return
 	}
 
-	fileType, err3 := utils.DetectFileType(&openBanner)
+	// 读取文件后重置指针
+	tempFile, err := io.ReadAll(openBanner)
+	if err != nil {
+		return
+	}
+	_, err3 := openBanner.Seek(0, io.SeekStart)
 	if err3 != nil {
 		response.RespondWithStatusBadRequest(ctx, err3.Error())
 		return
 	}
-	if fileType == "image/png" {
-		fileType = "png"
-	}
-	if fileType == "image/jpeg" {
-		fileType = "jpeg"
-	}
+
+	fileType := utils.DetectFileType(tempFile)
 
 	bannerName, err4 := service.UploadFileObject(config.AC.Oss.StyleBucket, "profileBanner/", openBanner, fileType)
 	if err4 != nil {

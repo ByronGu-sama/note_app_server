@@ -12,7 +12,6 @@ import (
 	"log"
 	"math"
 	"math/rand/v2"
-	"mime/multipart"
 	"net/http"
 	"note_app_server/config"
 	"note_app_server/global"
@@ -25,7 +24,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -51,79 +49,74 @@ func NewNote(ctx *gin.Context) {
 	var coverHeight float64
 	var cover string
 	var picsNameList string
-	var wg sync.WaitGroup
-	type uploadRequest struct {
-		fileHeader *multipart.FileHeader
-		index      int
-	}
-	uploadChanList := make(chan uploadRequest)
-	go func() {
-		for req := range uploadChanList {
-			wg.Add(1)
-			go func(req uploadRequest) {
-				defer wg.Done()
-				openFile, err1 := req.fileHeader.Open()
-				if err1 != nil {
-					response.RespondWithStatusBadRequest(ctx, err1.Error())
-					return
-				}
-				defer func(openFile multipart.File) {
-					err := openFile.Close()
-					if err != nil {
-						log.Printf("close file err: %v", err)
-					}
-				}(openFile)
+	fileList := make([]string, 0)
 
-				// 判断文件类型
-				fileType, err2 := utils.DetectFileType(&openFile)
-				if err2 != nil {
-					response.RespondWithStatusBadRequest(ctx, err2.Error())
-					return
-				}
-				if fileType == "image/png" {
-					fileType = "png"
-				}
-				if fileType == "image/jpeg" {
-					fileType = "jpeg"
-				}
-
-				// 获取封面高度
-				if req.index == 0 {
-					img, _, err := image.Decode(openFile)
-					if err != nil {
-						response.RespondWithStatusBadRequest(ctx, err.Error())
-						return
-					}
-					// 重置指针
-					_, err = openFile.Seek(0, io.SeekStart)
-					if err != nil {
-						return
-					}
-					height := img.Bounds().Dy()
-					width := img.Bounds().Dx()
-					coverHeight = math.Round(100.0/float64(width)*float64(height)*100) / 100
-				}
-
-				fileName, err3 := service.UploadFileObject(config.AC.Oss.NotePicsBucket, noteId+"/", openFile, fileType)
-				// 获取封面
-				if req.index == 0 {
-					cover = fileName
-				}
-
-				if err3 != nil {
-					response.RespondWithStatusInternalServerError(ctx, err3.Error())
-					return
-				} else {
-					picsNameList += fileName + ";"
-				}
-			}(req)
-		}
-	}()
 	for index, fileHeader := range ctx.Request.MultipartForm.File["file"] {
-		uploadChanList <- uploadRequest{fileHeader, index}
+		openFile, err1 := fileHeader.Open()
+		if err1 != nil {
+			response.RespondWithStatusBadRequest(ctx, err1.Error())
+			return
+		}
+
+		tempFile, err2 := io.ReadAll(openFile)
+		if err2 != nil {
+			response.RespondWithStatusBadRequest(ctx, err2.Error())
+			return
+		}
+		// 重置指针
+		_, seekErr := openFile.Seek(0, io.SeekStart)
+		if seekErr != nil {
+			response.RespondWithStatusBadRequest(ctx, seekErr.Error())
+			return
+		}
+
+		// 判断文件类型
+		fileType := utils.DetectFileType(tempFile)
+
+		// 获取封面高度
+		if index == 0 {
+			img, _, err := image.Decode(openFile)
+			if err != nil {
+				response.RespondWithStatusBadRequest(ctx, err.Error())
+				return
+			}
+			// 重置指针
+			_, err = openFile.Seek(0, io.SeekStart)
+			if err != nil {
+				return
+			}
+			height := img.Bounds().Dy()
+			width := img.Bounds().Dx()
+			coverHeight = math.Round(100.0/float64(width)*float64(height)*100) / 100
+		}
+
+		fileName, err3 := service.UploadFileObject(config.AC.Oss.NotePicsBucket, noteId+"/", openFile, fileType)
+		fileList = append(fileList, fileName)
+
+		// 获取封面
+		if index == 0 {
+			cover = fileName
+		}
+
+		if err3 != nil {
+			for i := range fileList {
+				err := service.DeleteObject(config.AC.Oss.NotePicsBucket, noteId+"/", fileList[i])
+				if err != nil {
+					log.Println(err)
+				}
+			}
+			response.RespondWithStatusInternalServerError(ctx, err3.Error())
+			return
+		} else {
+			picsNameList += fileName + ";"
+		}
+
+		err := openFile.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+		openFile.Close()
 	}
-	close(uploadChanList)
-	wg.Wait()
 
 	n := &noteModel.Note{
 		Nid:         noteId,

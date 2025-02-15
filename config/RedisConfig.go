@@ -28,5 +28,5 @@ func InitRedisConfig() {
 		ConnMaxLifetime: AC.Redis.Pool.MaxWait * time.Millisecond,
 	})
 	global.TokenRdb = tokenRdb
-	global.CaptchaRdb = captchaRdb
+	global.SMSCaptchaRdb = captchaRdb
 }

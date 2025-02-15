@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	captcha20230305 "github.com/alibabacloud-go/captcha-20230305/client"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -28,12 +29,17 @@ func Register(ctx *gin.Context) {
 		return
 	}
 
-	// 检查密码是否为空
 	if user.Password == "" {
 		response.RespondWithStatusBadRequest(ctx, "密码不能为空")
 		return
 	}
 
+	if len(user.Password) < 8 || len(user.Password) > 64 {
+		response.RespondWithStatusBadRequest(ctx, "密码长度要求8～64个字符")
+		return
+	}
+
+	// 加密密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		response.RespondWithStatusInternalServerError(ctx, "服务器内部错误")
@@ -103,14 +109,42 @@ func Logout(ctx *gin.Context) {
 		return
 	}
 	if deletedCount == 0 {
-		response.RespondWithStatusBadRequest(ctx, "该用户未登录或已退出")
+		response.RespondWithStatusBadRequest(ctx, "该用户未登录")
 		return
 	}
 
 	response.RespondWithStatusOK(ctx, "已退出登录")
 }
 
-// CheckToken 检查token有效性
+// CheckToken token校验
 func CheckToken(ctx *gin.Context) {
 	response.RespondWithStatusOK(ctx, "valid")
+}
+
+// CheckCaptcha 验证码校验
+func CheckCaptcha(ctx *gin.Context) {
+	c := global.CaptchaClientPool.Get().(*captcha20230305.Client)
+	defer global.CaptchaClientPool.Put(c)
+
+	request := captcha20230305.VerifyIntelligentCaptchaRequest{}
+	err := ctx.ShouldBind(&request)
+	if err != nil {
+		response.RespondWithStatusBadRequest(ctx, err.Error())
+		return
+	}
+
+	resp, err1 := c.VerifyIntelligentCaptcha(&request)
+	if err1 != nil {
+		response.RespondWithStatusBadRequest(ctx, "校验失败")
+		return
+	}
+
+	captchaVerifyResult := resp.Body.Result.VerifyResult
+	captchaVerifyCode := resp.Body.Result.VerifyCode
+
+	if *captchaVerifyResult {
+		response.RespondWithStatusOK(ctx, "success")
+	} else {
+		response.RespondWithStatusBadRequest(ctx, *captchaVerifyCode)
+	}
 }

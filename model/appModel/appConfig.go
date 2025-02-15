@@ -28,11 +28,19 @@ type AppConfig struct {
 			MaxWait   time.Duration
 		}
 	}
+	Es struct {
+		Host string
+		Port string
+	}
 	Oss struct {
 		AvatarBucket   string
 		NotePicsBucket string
 		StyleBucket    string
 		EndPoint       string
 		Region         string
+	}
+	Captcha struct {
+		EndPoint string
+		SceneId  string
 	}
 }
