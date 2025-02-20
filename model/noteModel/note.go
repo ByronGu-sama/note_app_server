@@ -1,6 +1,10 @@
 package noteModel
 
-import "time"
+import (
+	"encoding/json"
+	"log"
+	"time"
+)
 
 type Note struct {
 	Nid         string    `json:"nid" gorm:"column:nid"`
@@ -20,4 +24,35 @@ type Note struct {
 
 func (Note) TableName() string {
 	return "notes"
+}
+
+type ESNote struct {
+	Nid         string    `json:"nid"`
+	Uid         uint      `json:"uid"`
+	Username    string    `json:"username"`
+	AvatarUrl   string    `json:"avatarUrl"`
+	Cover       string    `json:"cover"`
+	CoverHeight float64   `json:"cover_height"`
+	Pics        string    `json:"pics"`
+	Title       string    `json:"title"`
+	Content     string    `json:"content"`
+	LikesCount  uint      `json:"likes_count"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Public      bool      `json:"public"`
+	CategoryId  uint      `json:"category_id"`
+	Tags        string    `json:"tags"`
+	Status      uint      `json:"status"`
+}
+
+func (that *ESNote) ToRawJson() json.RawMessage {
+	result, err := json.Marshal(that)
+	if err != nil {
+		log.Fatal("jsonify failed")
+	}
+	return result
+}
+
+func (that *ESNote) ToJson() string {
+	return string(that.ToRawJson())
 }

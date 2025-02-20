@@ -403,6 +403,50 @@ func GetMyNotes(ctx *gin.Context) {
 	})
 }
 
+// GetNotesListWithKeyword 获取搜索帖子的结果
+func GetNotesListWithKeyword(ctx *gin.Context) {
+	keyword := ctx.Param("keyword")
+	page := ctx.Query("page")
+	limit := ctx.Query("limit")
+	truePage, err1 := strconv.Atoi(page)
+	if err1 != nil {
+		response.RespondWithStatusBadRequest(ctx, err1.Error())
+		return
+	}
+	trueLimit, err2 := strconv.Atoi(limit)
+	if err2 != nil {
+		response.RespondWithStatusBadRequest(ctx, err2.Error())
+		return
+	}
+	if truePage <= 0 || trueLimit <= 0 {
+		response.RespondWithStatusBadRequest(ctx, "参数错误")
+		return
+	}
+
+	offset := (truePage - 1) * trueLimit
+
+	if len(keyword) < 1 || len(keyword) > 200 {
+		response.RespondWithStatusBadRequest(ctx, "关键词长度错误")
+		return
+	}
+	result, err := repository.GetNoteListWithKeyword("notes", keyword, &offset, &trueLimit)
+	if err != nil {
+		response.RespondWithStatusBadRequest(ctx, err.Error())
+		return
+	}
+
+	for i := range result {
+		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl)
+		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover)
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"message": "success",
+		"data":    result,
+	})
+}
+
 func checkUidAndNid(ctx *gin.Context) (string, uint, error) {
 	nid := ctx.Param("nid")
 	if nid == "" {

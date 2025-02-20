@@ -1,11 +1,9 @@
 package service
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	"log"
 	"note_app_server/global"
 	"note_app_server/model/appModel"
 	"time"
@@ -32,7 +30,11 @@ func GenerateJWT(uid uint) (string, error) {
 		"Iat": time.Now().Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, mapClaims)
-	return token.SignedString(global.JWTKey)
+	signedToken, err := token.SignedString(global.JWTKey)
+	if err != nil {
+		return "", err
+	}
+	return signedToken, nil
 }
 
 // ParseJWT 解析JWT
@@ -48,14 +50,4 @@ func ParseJWT(tokenString string) (interface{}, error) {
 		return nil, fmt.Errorf("invalid token")
 	}
 	return claims, nil
-}
-
-// CreateJWTKey 生成JWT密钥
-func CreateJWTKey() {
-	var jwtKey = make([]byte, 32)
-	if _, err := rand.Read(jwtKey); err != nil {
-		log.Fatalf("Failed to generate JWT Key: %v", err)
-	} else {
-		global.JWTKey = jwtKey
-	}
 }

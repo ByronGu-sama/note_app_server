@@ -25,7 +25,7 @@ func InitAppConfig() {
 	var once sync.Once
 	var wg sync.WaitGroup
 	once.Do(func() {
-		wg.Add(5)
+		wg.Add(6)
 		go func() {
 			defer wg.Done()
 			InitMysqlConfig()
@@ -45,6 +45,10 @@ func InitAppConfig() {
 		go func() {
 			defer wg.Done()
 			InitElasticSearchConfig()
+		}()
+		go func() {
+			defer wg.Done()
+			InitJWTConfig()
 		}()
 	})
 	wg.Wait()

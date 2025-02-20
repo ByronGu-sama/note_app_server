@@ -10,9 +10,9 @@ type SurfaceNote struct {
 	CoverHeight float64 `json:"cover_height" gorm:"column:cover_height"`
 	Title       string  `json:"title" gorm:"column:title"`
 	Public      uint    `json:"public" gorm:"column:public"`
-	CategoryId  uint    `json:"categoryId" gorm:"column:category_id"`
+	CategoryId  uint    `json:"category_id" gorm:"column:category_id"`
 	Tags        string  `json:"tags" gorm:"column:tags"`
-	LikesCount  uint    `json:"likesCount" gorm:"column:likes_count"`
+	LikesCount  uint    `json:"likes_count" gorm:"column:likes_count"`
 }
 
 func (SurfaceNote) TableName() string {

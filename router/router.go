@@ -57,6 +57,13 @@ func SetupRouter() *gin.Engine {
 		})
 		verification := note.Group("").Use(middleware.TokenVerificationMiddleware())
 		{
+			keywordFilter := note.Group("").Use(middleware.SensitiveWordFilterMiddleware())
+			{
+				keywordFilter.GET("/search/:keyword", func(ctx *gin.Context) {
+					controller.GetNotesListWithKeyword(ctx)
+				})
+			}
+
 			verification.GET("/:nid", func(ctx *gin.Context) {
 				controller.GetNote(ctx)
 			})
