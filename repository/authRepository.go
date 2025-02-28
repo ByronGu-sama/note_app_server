@@ -40,7 +40,6 @@ func RegisterUser(user *userModel.UserLogin) error {
 		tx.Rollback()
 		return err
 	}
-
 	tx.Commit()
 	return nil
 }

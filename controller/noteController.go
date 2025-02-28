@@ -348,8 +348,8 @@ func GetNoteList(ctx *gin.Context) {
 	}
 
 	for i := range result {
-		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl)
-		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover)
+		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl) + "?x-oss-process=style/compress_avatar"
+		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover) + "?x-oss-process=style/compress_cover"
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -392,8 +392,8 @@ func GetMyNotes(ctx *gin.Context) {
 	}
 
 	for i := range result {
-		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl)
-		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover)
+		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl) + "?x-oss-process=style/compress_avatar"
+		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover) + "?x-oss-process=style/compress_cover"
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -436,8 +436,8 @@ func GetNotesListWithKeyword(ctx *gin.Context) {
 	}
 
 	for i := range result {
-		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl)
-		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover)
+		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl) + "?x-oss-process=style/compress_avatar"
+		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover) + "?x-oss-process=style/compress_cover"
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{

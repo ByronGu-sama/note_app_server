@@ -16,6 +16,8 @@ redis:
   tokenDB: 0
   # 验证码数据库索引
   captchaDB: 1
+  # 私聊消息缓存
+  msgDB: 2
   # redis服务器地址（默认为localhost）
   host: localhost
   # redis端口（默认为6379）
@@ -37,6 +39,21 @@ redis:
 es:
   host: localhost
   port: 9200
+mongo:
+  host: localhost
+  port: 8088
+  username: root
+  password: 123
+kafka:
+  network: "tcp"
+  host: localhost
+  port: 9092
+  noteLikes:
+    topic: "note_likes"
+    partitions: 10
+  noteComments:
+    topic: "note_comments"
+    partitions: 10
 oss:
   avatarBucket: "note-app-oss-avatar"
   notePicsBucket: "note-app-oss-note-pics"

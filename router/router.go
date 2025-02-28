@@ -92,7 +92,7 @@ func SetupRouter() *gin.Engine {
 				controller.CancelCollectNote(ctx)
 			})
 		}
-		checkFileType := note.Group("").Use(middleware.DetectNotePicsTypeMiddleware())
+		checkFileType := note.Group("").Use(middleware.TokenVerificationMiddleware()).Use(middleware.DetectNotePicsTypeMiddleware())
 		{
 			checkFileType.POST("", func(ctx *gin.Context) {
 				controller.NewNote(ctx)
@@ -100,7 +100,7 @@ func SetupRouter() *gin.Engine {
 		}
 	}
 
-	comment := r.Group("/comment").Use(middleware.TokenVerificationMiddleware())
+	comment := r.Group("/comment")
 	{
 		comment.POST("", func(ctx *gin.Context) {
 			controller.NewComment(ctx)
@@ -133,12 +133,19 @@ func SetupRouter() *gin.Engine {
 				controller.GetStyle(ctx)
 			})
 		}
-		checkImageType := style.Group("").Use(middleware.DetectNormalImageTypeMiddleware())
+		checkImageType := style.Group("").Use(middleware.TokenVerificationMiddleware()).Use(middleware.DetectNormalImageTypeMiddleware())
 		{
 			checkImageType.POST("/updateProfileBanner", func(ctx *gin.Context) {
 				controller.UpdateProfileBanner(ctx)
 			})
 		}
+	}
+
+	message := r.Group("/message").Use(middleware.TokenVerificationMiddleware())
+	{
+		message.GET("/init", func(ctx *gin.Context) {
+			controller.GetWS(ctx)
+		})
 	}
 
 	return r

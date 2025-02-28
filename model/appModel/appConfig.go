@@ -17,6 +17,7 @@ type AppConfig struct {
 	Redis struct {
 		TokenDB   int
 		CaptchaDB int
+		MsgDB     int
 		Host      string
 		Port      string
 		Password  string
@@ -28,9 +29,28 @@ type AppConfig struct {
 			MaxWait   time.Duration
 		}
 	}
+	Mongo struct {
+		Host     string
+		Port     string
+		Username string
+		Password string
+	}
 	Es struct {
 		Host string
 		Port string
+	}
+	Kafka struct {
+		Network   string
+		Host      string
+		Port      string
+		NoteLikes struct {
+			Topic      string
+			Partitions int
+		}
+		NoteComments struct {
+			Topic      string
+			Partitions int
+		}
 	}
 	Oss struct {
 		AvatarBucket   string
