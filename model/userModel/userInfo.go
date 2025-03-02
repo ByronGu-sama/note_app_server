@@ -19,3 +19,10 @@ type UserInfo struct {
 func (UserInfo) TableName() string {
 	return "user_info"
 }
+
+// FollowUser 用户关注列表&粉丝列表类型
+type FollowUser struct {
+	Uid       uint   `json:"uid" gorm:"column:uid"`
+	Username  string `json:"username" gorm:"column:username"`
+	AvatarUrl string `json:"avatarUrl" gorm:"column:avatarUrl"`
+}

@@ -37,7 +37,18 @@ func InitRedisConfig() {
 		MinIdleConns:    AC.Redis.Pool.MinIdle,
 		ConnMaxLifetime: AC.Redis.Pool.MaxWait * time.Millisecond,
 	})
+	msgHistoryRdb := redis.NewClient(&redis.Options{
+		Addr:            AC.Redis.Host + AC.Redis.Port,
+		DB:              AC.Redis.MsgHistoryDB,
+		Password:        AC.Redis.Password,
+		DialTimeout:     AC.Redis.Timeout * time.Millisecond,
+		PoolSize:        AC.Redis.Pool.MaxActive,
+		MaxIdleConns:    AC.Redis.Pool.MaxIdle,
+		MinIdleConns:    AC.Redis.Pool.MinIdle,
+		ConnMaxLifetime: AC.Redis.Pool.MaxWait * time.Millisecond,
+	})
 	global.TokenRdb = tokenRdb
 	global.SMSCaptchaRdb = captchaRdb
 	global.MsgRdb = msgRdb
+	global.MsgHistoryRdb = msgHistoryRdb
 }

@@ -3,12 +3,15 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
 	"note_app_server/global"
+	"note_app_server/model/appModel"
 	"note_app_server/model/msgModel"
 	"note_app_server/model/userModel"
 	"note_app_server/response"
@@ -59,25 +62,13 @@ var (
 )
 
 func InitWS(ctx *gin.Context) {
-	// 消息处理
-	go func() {
-		for msg := range messageQueue {
-			if msg.Conn != nil {
-				err := msg.Conn.WriteMessage(websocket.TextMessage, msg.Msg.EncodeMessage())
-				if err != nil {
-					log.Println(err)
-				}
-			}
-		}
-	}()
-
 	// 绑定消息
-	tempUid, ok := ctx.Get("uid")
-	if !ok {
-		response.RespondWithStatusBadRequest(ctx, "缺少必要信息")
+	token := ctx.Query("t")
+	uid, checkResult := verifyToken(token)
+	if !checkResult {
+		response.RespondWithStatusBadRequest(ctx, "校验错误")
 		return
 	}
-	fromId := tempUid.(uint)
 
 	// 升级为ws连接
 	conn, err := upGrader.Upgrade(ctx.Writer, ctx.Request, nil)
@@ -85,7 +76,19 @@ func InitWS(ctx *gin.Context) {
 		log.Println(err)
 		return
 	}
-	go connectionProc(conn, fromId)
+	// 消息处理
+	go func() {
+		for msg := range messageQueue {
+			RWLocker.Lock()
+			err = msg.Conn.WriteMessage(websocket.TextMessage, msg.Msg.EncodeMessage())
+			RWLocker.Unlock()
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}()
+
+	go connectionProc(conn, uid)
 }
 
 // 处理连接
@@ -105,26 +108,29 @@ func connectionProc(conn *websocket.Conn, uid uint) {
 		if err != nil {
 			return
 		}
-		for i := range strings {
+		for _, i := range strings {
 			rawMsg := Msg{}
-			err = rawMsg.ParseMsg([]byte(strings[i]))
-			if err != nil {
-				continue
+			if err = rawMsg.ParseMsg([]byte(i)); err == nil {
+				messageQueue <- Message{Conn: conn, Msg: rawMsg}
 			}
-			messageQueue <- Message{Conn: conn, Msg: rawMsg}
 		}
 		global.MsgRdb.LPop(context.TODO(), strconv.Itoa(int(uid)))
 	}()
 
 	for {
 		_, message, err := conn.ReadMessage()
-		tempMsg := &Msg{}
-		err = tempMsg.ParseMsg(message)
 		if err != nil {
+			delConn(uid)
+			break
+		}
+		tempMsg := &Msg{}
+		if err = tempMsg.ParseMsg(message); err != nil {
+			RWLocker.Lock()
 			conn.WriteMessage(websocket.TextMessage, []byte(err.Error()))
+			RWLocker.Unlock()
 			log.Println(err.Error())
 		}
-
+		tempMsg.FromId = uid
 		if tempMsg.Type == 1 {
 			privateMsgProc(tempMsg)
 		} else if tempMsg.Type == 2 {
@@ -136,13 +142,16 @@ func connectionProc(conn *websocket.Conn, uid uint) {
 // 私聊消息
 func privateMsgProc(msg *Msg) {
 	conn := getConn(msg.ToId)
+	var ctx = context.Background()
 	if conn != nil {
 		messageQueue <- Message{Conn: conn, Msg: *msg}
+		msg.Read = true
+		// 1、检查from - to是否存在
+		// 2、然后检查to - from是否存在
+		// 3、都不存在就是第一次沟通
+
 	} else {
-		var ctx = context.Background()
-		// 接收人不在线暂存至redis列表保存30min，超时归档至mongodb
-		global.MsgRdb.LPush(ctx, strconv.Itoa(int(msg.ToId)), msg.EncodeMessage())
-		global.MsgRdb.Expire(ctx, strconv.Itoa(int(msg.ToId)), 30*time.Minute)
+		msg.Read = false
 		// 消息存储优化点
 		// 1、redis中的消息设置过期时间
 		// 2、消息队列加入确认机制
@@ -153,6 +162,15 @@ func privateMsgProc(msg *Msg) {
 		// 数据可视化
 		// 可以加入到数据分析系统
 	}
+	fromToTarget := fmt.Sprintf("%d-%d", msg.FromId, msg.ToId)
+	targetToFrom := fmt.Sprintf("%d-%d", msg.ToId, msg.FromId)
+
+	key := fromToTarget
+	if fromToTarget > targetToFrom {
+		key = targetToFrom
+	}
+	global.MsgRdb.LPush(ctx, key, msg.EncodeMessage())
+	global.MsgRdb.Expire(ctx, strconv.Itoa(int(msg.ToId)), 24*time.Hour)
 }
 
 // 群发消息
@@ -171,9 +189,44 @@ func addConn(fromId uint, conn *websocket.Conn) {
 	websocketConn[fromId] = conn
 }
 
+// 删除连接
+func delConn(fromId uint) {
+	delete(websocketConn, fromId)
+}
+
 // 获取连接
 func getConn(uid uint) *websocket.Conn {
 	RWLocker.RLock()
 	defer RWLocker.RUnlock()
 	return websocketConn[uid]
+}
+
+// 检查token有效性
+func verifyToken(token string) (uint, bool) {
+	temp, err := ParseJWT(token)
+	// 校验token有效性
+	if token == "" || err != nil {
+		return 0, false
+	}
+	claims := temp.(*appModel.JWT)
+	// 验证uid
+	uid := claims.Uid
+	if uid == 0 {
+		return 0, false
+	}
+
+	rCtx := context.Background()
+	_, err = global.TokenRdb.Get(rCtx, strconv.Itoa(int(uid))).Result()
+	if errors.Is(err, redis.Nil) {
+		return 0, false
+	} else if err != nil {
+		return 0, false
+	}
+
+	var user *userModel.UserInfo
+	if err = global.Db.Where("uid = ?", uid).First(&user).Error; err != nil {
+		return 0, false
+	}
+
+	return uid, true
 }

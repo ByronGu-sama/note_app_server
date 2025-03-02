@@ -188,3 +188,50 @@ func UpdateUserInfo(ctx *gin.Context) {
 
 	response.RespondWithStatusOK(ctx, "更新成功")
 }
+
+// GetUserFollows 获取用户关注列表
+func GetUserFollows(ctx *gin.Context) {
+	tempUid, ok := ctx.Get("uid")
+	uid := tempUid.(uint)
+	if !ok {
+		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
+		return
+	}
+	follows, err := repository.GetUserFollows(uid)
+	for i := range follows {
+		follows[i].AvatarUrl = utils.AddAvatarPrefix(follows[i].AvatarUrl)
+	}
+	if err != nil {
+		response.RespondWithStatusInternalServerError(ctx, err.Error())
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"message": "success",
+		"data":    follows,
+	})
+}
+
+// GetUserFollowers 获取用户粉丝列表
+func GetUserFollowers(ctx *gin.Context) {
+	tempUid, ok := ctx.Get("uid")
+	uid := tempUid.(uint)
+	if !ok {
+		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
+		return
+	}
+
+	followers, err := repository.GetUserFollowers(uid)
+	for i := range followers {
+		followers[i].AvatarUrl = utils.AddAvatarPrefix(followers[i].AvatarUrl)
+	}
+	if err != nil {
+		response.RespondWithStatusInternalServerError(ctx, err.Error())
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"message": "success",
+		"data":    followers,
+	})
+}

@@ -101,3 +101,37 @@ func UpdateLoginFailedAt(uid uint) {
 func UpdateLoginSuccessAt(uid uint) {
 	global.Db.Model(&userModel.UserLogin{}).Where("uid = ?", uid).Update("lastLoginSuccessAt", time.Now())
 }
+
+// GetUserFollowers 获取粉丝列表
+func GetUserFollowers(uid uint) ([]userModel.FollowUser, error) {
+	var userList []userModel.FollowUser
+	sql := `select
+    ui.uid,
+    ui.username,
+    ui.avatarUrl
+from user_follow uf
+left join user_info ui
+on uf.uid = ui.uid
+where uf.target_uid = ?`
+	if err := global.Db.Raw(sql, uid).Scan(&userList).Error; err != nil {
+		return nil, err
+	}
+	return userList, nil
+}
+
+// GetUserFollows 获取关注的用户
+func GetUserFollows(uid uint) ([]userModel.FollowUser, error) {
+	var userList []userModel.FollowUser
+	sql := `select 
+    ui.uid,
+    ui.username,
+    ui.avatarUrl
+from user_follow uf 
+left join user_info ui 
+on uf.target_uid = ui.uid 
+where uf.uid = ?`
+	if err := global.Db.Raw(sql, uid).Scan(&userList).Error; err != nil {
+		return nil, err
+	}
+	return userList, nil
+}

@@ -18,6 +18,8 @@ redis:
   captchaDB: 1
   # 私聊消息缓存
   msgDB: 2
+  # 私聊历史消息缓存
+  msgHistoryDB: 3
   # redis服务器地址（默认为localhost）
   host: localhost
   # redis端口（默认为6379）

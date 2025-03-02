@@ -41,6 +41,12 @@ func SetupRouter() *gin.Engine {
 		userInfo.POST("/update", func(ctx *gin.Context) {
 			controller.UpdateUserInfo(ctx)
 		})
+		userInfo.GET("/follows", func(ctx *gin.Context) {
+			controller.GetUserFollows(ctx)
+		})
+		userInfo.GET("/followers", func(ctx *gin.Context) {
+			controller.GetUserFollowers(ctx)
+		})
 	}
 
 	avatar := r.Group("/avatar")
@@ -141,7 +147,7 @@ func SetupRouter() *gin.Engine {
 		}
 	}
 
-	message := r.Group("/message").Use(middleware.TokenVerificationMiddleware())
+	message := r.Group("/message")
 	{
 		message.GET("/init", func(ctx *gin.Context) {
 			controller.GetWS(ctx)
