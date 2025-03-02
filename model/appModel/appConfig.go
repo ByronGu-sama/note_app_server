@@ -48,6 +48,10 @@ type AppConfig struct {
 			Topic      string
 			Partitions int
 		}
+		NoteCollects struct {
+			Topic      string
+			Partitions int
+		}
 		NoteComments struct {
 			Topic      string
 			Partitions int

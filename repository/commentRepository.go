@@ -52,36 +52,6 @@ where c.cid = ?`, cmt.Cid).First(&newComment).Error; err != nil {
 	return newComment, nil
 }
 
-// DeleteComment 删除评论
-func DeleteComment(uid uint, cid string) error {
-	cmt := new(commentModel.Comment)
-	if err := global.Db.Where("cid = ? and uid = ?", cid, uid).First(&cmt).Error; err != nil {
-		return err
-	}
-	tx := global.Db.Begin()
-	result := tx.Model(&commentModel.Comment{}).Where("cid = ? and uid = ?", cid, uid).Delete(&commentModel.Comment{})
-	if result.RowsAffected == 0 {
-		tx.Rollback()
-		return errors.New("无匹配记录")
-	}
-	if result.Error != nil {
-		tx.Rollback()
-		return result.Error
-	}
-
-	result = tx.Model(&noteModel.NoteInfo{}).Where("nid = ?", cmt.Nid).UpdateColumn("comments_count", gorm.Expr("comments_count - ?", 1))
-	if result.Error != nil {
-		tx.Rollback()
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		tx.Rollback()
-		return errors.New("更新数据失败")
-	}
-	tx.Commit()
-	return nil
-}
-
 // LikeComment 点赞评论
 func LikeComment(uid uint, cid string) error {
 	if err := global.Db.Where("uid = ? and cid = ?", uid, cid).First(&commentModel.LikedComment{}).Error; err == nil {

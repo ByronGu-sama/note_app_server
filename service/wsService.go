@@ -146,10 +146,6 @@ func privateMsgProc(msg *Msg) {
 	if conn != nil {
 		messageQueue <- Message{Conn: conn, Msg: *msg}
 		msg.Read = true
-		// 1、检查from - to是否存在
-		// 2、然后检查to - from是否存在
-		// 3、都不存在就是第一次沟通
-
 	} else {
 		msg.Read = false
 		// 消息存储优化点
@@ -169,8 +165,9 @@ func privateMsgProc(msg *Msg) {
 	if fromToTarget > targetToFrom {
 		key = targetToFrom
 	}
+
 	global.MsgRdb.LPush(ctx, key, msg.EncodeMessage())
-	global.MsgRdb.Expire(ctx, strconv.Itoa(int(msg.ToId)), 24*time.Hour)
+	global.MsgRdb.Expire(ctx, key, 24*time.Hour)
 }
 
 // 群发消息

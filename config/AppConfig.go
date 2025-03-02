@@ -7,7 +7,11 @@ import (
 	"sync"
 )
 
-var AC *appModel.AppConfig
+var (
+	AC   *appModel.AppConfig
+	once sync.Once
+	wg   sync.WaitGroup
+)
 
 // InitAppConfig 读取config.yml文件
 func InitAppConfig() {
@@ -22,8 +26,6 @@ func InitAppConfig() {
 		log.Fatalf("unmarshal config failed, err:%v\n", err)
 	}
 
-	var once sync.Once
-	var wg sync.WaitGroup
 	once.Do(func() {
 		wg.Add(6)
 		go func() {

@@ -6,6 +6,7 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"note_app_server/model/commentModel"
+	"note_app_server/producer"
 	"note_app_server/repository"
 	"note_app_server/response"
 	"note_app_server/utils"
@@ -40,8 +41,8 @@ func NewComment(ctx *gin.Context) {
 	}
 
 	cmtInfo := &commentModel.CommentsInfo{Cid: cid, LikesCount: 0}
-
 	result, err := repository.NewComment(cmt, cmtInfo)
+
 	if err != nil {
 		response.RespondWithStatusBadRequest(ctx, "评论失败")
 		return
@@ -66,7 +67,7 @@ func DelComment(ctx *gin.Context) {
 		return
 	}
 
-	if err := repository.DeleteComment(uid.(uint), cid); err != nil {
+	if err := producer.DelComment(cid, uid.(uint)); err != nil {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return
 	}

@@ -17,6 +17,7 @@ import (
 	"note_app_server/global"
 	"note_app_server/model/noteModel"
 	"note_app_server/model/userModel"
+	"note_app_server/producer"
 	"note_app_server/repository"
 	"note_app_server/response"
 	"note_app_server/service"
@@ -269,7 +270,7 @@ func LikeNote(ctx *gin.Context) {
 		return
 	}
 
-	if err := repository.LikeNote(nid, uid); err != nil {
+	if err = producer.LikeNote(uid, nid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "点赞失败")
 		return
 	}
@@ -284,7 +285,7 @@ func DislikeNote(ctx *gin.Context) {
 		return
 	}
 
-	if err := repository.CancelLikeNote(nid, uid); err != nil {
+	if err = producer.DislikeNote(uid, nid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "取消点赞失败")
 		return
 	}
@@ -299,7 +300,7 @@ func CollectNote(ctx *gin.Context) {
 		return
 	}
 
-	if err := repository.CollectNote(nid, uid); err != nil {
+	if err = producer.CollectNote(uid, nid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "收藏失败")
 		return
 	}
@@ -314,7 +315,7 @@ func CancelCollectNote(ctx *gin.Context) {
 		return
 	}
 
-	if err := repository.CancelCollectNote(nid, uid); err != nil {
+	if err = producer.AbandonNote(uid, nid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "取消收藏失败")
 		return
 	}

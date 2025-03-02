@@ -5,18 +5,17 @@ import (
 	"time"
 )
 
-// LikeNotes 点赞&取消点赞笔记
-type LikeNotes struct {
+type DelNoteComment struct {
 	Action    string
-	Nid       string
+	Cid       string
 	Uid       uint
 	Timestamp time.Time
 }
 
-func (msg *LikeNotes) Decode(object []byte) error {
+func (msg *DelNoteComment) Decode(object []byte) error {
 	return json.Unmarshal(object, msg)
 }
 
-func (msg *LikeNotes) Encode() ([]byte, error) {
+func (msg *DelNoteComment) Encode() ([]byte, error) {
 	return json.Marshal(msg)
 }

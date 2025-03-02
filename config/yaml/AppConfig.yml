@@ -50,12 +50,19 @@ kafka:
   network: "tcp"
   host: localhost
   port: 9092
+  # 点赞&取消点赞
   noteLikes:
     topic: "note_likes"
     partitions: 10
+  # 收藏&取消收藏
+  noteCollects:
+    topic: "note_collects"
+    partitions: 10
+  # 评论笔记
   noteComments:
     topic: "note_comments"
     partitions: 10
+
 oss:
   avatarBucket: "note-app-oss-avatar"
   notePicsBucket: "note-app-oss-note-pics"

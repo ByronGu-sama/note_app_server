@@ -1,57 +1,128 @@
 package producer
 
 import (
-	"context"
-	"encoding/json"
 	"github.com/segmentio/kafka-go"
-	"log"
-	"note_app_server/config"
+	"note_app_server/config/kafkaAction"
 	"note_app_server/model/mqMessageModel"
+	"note_app_server/producer/connManager"
 	"time"
 )
 
-var partitions = config.AC.Kafka.NoteLikes.Partitions
-var part = 0
-
+// LikeNote 点赞笔记
 func LikeNote(uid uint, nid string) error {
-	network := config.AC.Kafka.Network
-	host := config.AC.Kafka.Host
-	port := config.AC.Kafka.Port
-	topic := config.AC.Kafka.NoteLikes.Topic
-
-	// 连接至Kafka集群的Leader节点
-	conn, err := kafka.DialLeader(context.Background(), network, host+":"+port, topic, part)
-	if err != nil {
-		log.Fatal("failed to dial leader:", err)
-	}
-	// 设置发送消息的超时时间
-	err = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		return err
-	}
-
 	msg := &mqMessageModel.LikeNotes{
 		Uid:       uid,
 		Nid:       nid,
-		Action:    "likeNote",
+		Action:    kafkaAction.LikeNote,
 		Timestamp: time.Now(),
 	}
 
-	marshal, err := json.Marshal(msg)
+	encodedMsg, err := msg.Encode()
 	if err != nil {
 		return err
 	}
 
 	// 发送消息
-	_, err = conn.WriteMessages(
-		kafka.Message{Value: marshal},
+	_, err = connManager.NoteLikesMQConn.WriteMessages(
+		kafka.Message{Value: encodedMsg},
 	)
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	// 关闭连接
-	if err = conn.Close(); err != nil {
+// DislikeNote 取消点赞笔记
+func DislikeNote(uid uint, nid string) error {
+	msg := &mqMessageModel.LikeNotes{
+		Uid:       uid,
+		Nid:       nid,
+		Action:    kafkaAction.DislikeNote,
+		Timestamp: time.Now(),
+	}
+
+	encodedMsg, err := msg.Encode()
+	if err != nil {
+		return err
+	}
+
+	// 发送消息
+	_, err = connManager.NoteLikesMQConn.WriteMessages(
+		kafka.Message{Value: encodedMsg},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// CollectNote 收藏笔记
+func CollectNote(uid uint, nid string) error {
+	msg := &mqMessageModel.CollectNotes{
+		Uid:       uid,
+		Nid:       nid,
+		Action:    kafkaAction.CollectNote,
+		Timestamp: time.Now(),
+	}
+
+	encodedMsg, err := msg.Encode()
+	if err != nil {
+		return err
+	}
+
+	// 发送消息
+	_, err = connManager.NoteCollectsMQConn.WriteMessages(
+		kafka.Message{Value: encodedMsg},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// AbandonNote 取消收藏笔记
+func AbandonNote(uid uint, nid string) error {
+	msg := &mqMessageModel.CollectNotes{
+		Uid:       uid,
+		Nid:       nid,
+		Action:    kafkaAction.AbandonNote,
+		Timestamp: time.Now(),
+	}
+
+	encodedMsg, err := msg.Encode()
+	if err != nil {
+		return err
+	}
+
+	// 发送消息
+	_, err = connManager.NoteCollectsMQConn.WriteMessages(
+		kafka.Message{Value: encodedMsg},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DelComment 删除笔记评论
+func DelComment(cid string, uid uint) error {
+	msg := &mqMessageModel.DelNoteComment{
+		Cid:       cid,
+		Uid:       uid,
+		Action:    kafkaAction.DelNoteComment,
+		Timestamp: time.Now(),
+	}
+
+	encodedMsg, err := msg.Encode()
+	if err != nil {
+		return err
+	}
+
+	// 发送消息
+	_, err = connManager.NoteCommentsMQConn.WriteMessages(
+		kafka.Message{Value: encodedMsg},
+	)
+	if err != nil {
 		return err
 	}
 	return nil
