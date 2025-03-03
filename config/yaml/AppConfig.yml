@@ -62,7 +62,14 @@ kafka:
   noteComments:
     topic: "note_comments"
     partitions: 10
-
+  # 同步笔记
+  syncNotes:
+    topic: "sync_notes"
+    partition: 10
+  # 删除笔记
+  delNotes:
+    topic: "del_notes"
+    partition: 10
 oss:
   avatarBucket: "note-app-oss-avatar"
   notePicsBucket: "note-app-oss-note-pics"

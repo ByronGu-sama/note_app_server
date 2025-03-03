@@ -106,7 +106,7 @@ func SetupRouter() *gin.Engine {
 		}
 	}
 
-	comment := r.Group("/comment")
+	comment := r.Group("/comment").Use(middleware.TokenVerificationMiddleware())
 	{
 		comment.POST("", func(ctx *gin.Context) {
 			controller.NewComment(ctx)

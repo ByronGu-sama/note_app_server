@@ -52,66 +52,6 @@ where c.cid = ?`, cmt.Cid).First(&newComment).Error; err != nil {
 	return newComment, nil
 }
 
-// LikeComment 点赞评论
-func LikeComment(uid uint, cid string) error {
-	if err := global.Db.Where("uid = ? and cid = ?", uid, cid).First(&commentModel.LikedComment{}).Error; err == nil {
-		return errors.New("已点赞")
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-
-	tx := global.Db.Begin()
-	result := tx.Create(&commentModel.LikedComment{Uid: uid, Cid: cid})
-	if result.Error != nil {
-		tx.Rollback()
-		return result.Error
-	}
-
-	result = tx.Model(&commentModel.CommentsInfo{}).Where("cid = ?", cid).UpdateColumn("likes_count", gorm.Expr("likes_count + ?", 1))
-	if result.Error != nil {
-		tx.Rollback()
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		tx.Rollback()
-		return errors.New("更新数据失败")
-	}
-	tx.Commit()
-	return nil
-}
-
-// DislikeComment 取消点赞评论
-func DislikeComment(uid uint, cid string) error {
-	if err := global.Db.Where("uid = ? and cid = ?", uid, cid).First(&commentModel.LikedComment{}).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-		return errors.New("未点赞")
-	} else if err != nil {
-		return err
-	}
-
-	tx := global.Db.Begin()
-	result := tx.Where("uid = ? and cid = ?", uid, cid).Delete(&commentModel.LikedComment{})
-	if result.Error != nil {
-		tx.Rollback()
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		tx.Rollback()
-		return errors.New("取消点赞失败")
-	}
-
-	result = tx.Model(&commentModel.CommentsInfo{}).Where("cid = ?", cid).UpdateColumn("likes_count", gorm.Expr("likes_count - ?", 1))
-	if result.Error != nil {
-		tx.Rollback()
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		tx.Rollback()
-		return errors.New("更新数据失败")
-	}
-	tx.Commit()
-	return nil
-}
-
 // GetNoteCommentsList 获取笔记评论列表
 func GetNoteCommentsList(nid string, page, limit int) ([]commentModel.CommentDetail, error) {
 	offset := (page - 1) * limit

@@ -7,6 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"note_app_server/global"
 	"note_app_server/model/appModel"
+	"note_app_server/model/userModel"
 	"note_app_server/repository"
 	"note_app_server/response"
 	"note_app_server/service"
@@ -44,7 +45,8 @@ func TokenVerificationMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if _, err := repository.GetUserInfo(uid); err != nil {
+		userInfo := &userModel.UserInfo{}
+		if userInfo, err = repository.GetUserInfo(uid); err != nil {
 			response.RespondWithUnauthorized(ctx, "无访问权限")
 			ctx.Abort()
 			return
@@ -52,6 +54,8 @@ func TokenVerificationMiddleware() gin.HandlerFunc {
 
 		// uid写入上下文
 		ctx.Set("uid", uid)
+		ctx.Set("username", userInfo.Username)
+		ctx.Set("avatarUrl", userInfo.AvatarUrl)
 		ctx.Next()
 	}
 }

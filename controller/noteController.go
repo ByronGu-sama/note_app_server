@@ -119,6 +119,8 @@ func NewNote(ctx *gin.Context) {
 		openFile.Close()
 	}
 
+	curTime := time.Now()
+
 	n := &noteModel.Note{
 		Nid:         noteId,
 		Uid:         uid,
@@ -128,6 +130,8 @@ func NewNote(ctx *gin.Context) {
 		CategoryId:  1,
 		Tags:        tags,
 		Title:       title,
+		CreatedAt:   curTime,
+		UpdatedAt:   curTime,
 		Content:     content,
 		Public:      1,
 	}
@@ -146,6 +150,32 @@ func NewNote(ctx *gin.Context) {
 	}
 	tx.Commit()
 	response.RespondWithStatusOK(ctx, "创建成功")
+
+	tempUsername, _ := ctx.Get("username")
+	username := tempUsername.(string)
+	tempAvatarUrl, _ := ctx.Get("avatarUrl")
+	avatarUrl := tempAvatarUrl.(string)
+
+	esNote := &noteModel.ESNote{
+		Nid:         noteId,
+		Uid:         uid,
+		Username:    username,
+		AvatarUrl:   avatarUrl,
+		Cover:       cover,
+		CoverHeight: coverHeight,
+		Pics:        picsNameList[:len(picsNameList)-1],
+		Title:       title,
+		Content:     content,
+		LikesCount:  0,
+		CreatedAt:   curTime,
+		UpdatedAt:   curTime,
+		Public:      true,
+		CategoryId:  1,
+		Tags:        tags,
+		Status:      1,
+	}
+
+	producer.SyncToES(esNote)
 }
 
 // DelNote 删除笔记
@@ -155,7 +185,7 @@ func DelNote(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return
 	}
-	if err := repository.DeleteNoteWithUid(nid, uid); err != nil {
+	if err = producer.DelNote(uid, nid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "删除失败")
 		return
 	}

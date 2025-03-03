@@ -88,7 +88,7 @@ func LikeComment(ctx *gin.Context) {
 		return
 	}
 
-	if err := repository.LikeComment(uid.(uint), cid); err != nil {
+	if err := producer.LikeNoteComment(uid.(uint), cid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return
 	}
@@ -108,7 +108,7 @@ func CancelLikeComment(ctx *gin.Context) {
 		return
 	}
 
-	if err := repository.DislikeComment(uid.(uint), cid); err != nil {
+	if err := producer.DislikeNoteComment(uid.(uint), cid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return
 	}

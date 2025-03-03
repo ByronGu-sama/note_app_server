@@ -6,18 +6,19 @@ import (
 	"log"
 	"note_app_server/config"
 	"sync"
-	"time"
 )
 
 var (
 	NoteLikesMQConn    *kafka.Conn
 	NoteCollectsMQConn *kafka.Conn
 	NoteCommentsMQConn *kafka.Conn
+	SyncNotesMQConn    *kafka.Conn
+	DelNotesMQConn     *kafka.Conn
 )
 
 func InitKafkaConn() {
 	wg := sync.WaitGroup{}
-	wg.Add(3)
+	wg.Add(5)
 	go func() {
 		defer wg.Done()
 		initNoteLikesMQConn()
@@ -30,6 +31,14 @@ func InitKafkaConn() {
 		defer wg.Done()
 		initCommentMQConn()
 	}()
+	go func() {
+		defer wg.Done()
+		initSyncNoteMQConn()
+	}()
+	go func() {
+		defer wg.Done()
+		initDelNoteMQConn()
+	}()
 	wg.Wait()
 }
 
@@ -38,10 +47,6 @@ func initNoteLikesMQConn() {
 	conn, err := kafka.DialLeader(context.Background(), config.AC.Kafka.Network, config.AC.Kafka.Host+":"+config.AC.Kafka.Port, config.AC.Kafka.NoteLikes.Topic, 0)
 	if err != nil {
 		// 加入重试机制
-		log.Fatal("failed to dial leader:", err)
-	}
-	err = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
 		log.Fatal("failed to dial leader:", err)
 	}
 	NoteLikesMQConn = conn
@@ -54,10 +59,6 @@ func initNoteCollectsMQConn() {
 		// 加入重试机制
 		log.Fatal("failed to dial leader:", err)
 	}
-	err = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		log.Fatal("failed to dial leader:", err)
-	}
 	NoteCollectsMQConn = conn
 }
 
@@ -68,9 +69,25 @@ func initCommentMQConn() {
 		// 加入重试机制
 		log.Fatal("failed to dial leader:", err)
 	}
-	err = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	NoteCommentsMQConn = conn
+}
+
+// 同步笔记相关的连接
+func initSyncNoteMQConn() {
+	conn, err := kafka.DialLeader(context.Background(), config.AC.Kafka.Network, config.AC.Kafka.Host+":"+config.AC.Kafka.Port, config.AC.Kafka.SyncNotes.Topic, 0)
 	if err != nil {
+		// 加入重试机制
 		log.Fatal("failed to dial leader:", err)
 	}
-	NoteCommentsMQConn = conn
+	SyncNotesMQConn = conn
+}
+
+// 删除笔记相关的连接
+func initDelNoteMQConn() {
+	conn, err := kafka.DialLeader(context.Background(), config.AC.Kafka.Network, config.AC.Kafka.Host+":"+config.AC.Kafka.Port, config.AC.Kafka.DelNotes.Topic, 0)
+	if err != nil {
+		// 加入重试机制
+		log.Fatal("failed to dial leader:", err)
+	}
+	DelNotesMQConn = conn
 }
