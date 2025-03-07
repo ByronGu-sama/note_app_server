@@ -14,11 +14,12 @@ var (
 	NoteCommentsMQConn *kafka.Conn
 	SyncNotesMQConn    *kafka.Conn
 	DelNotesMQConn     *kafka.Conn
+	SyncMessagesMQConn *kafka.Conn
 )
 
 func InitKafkaConn() {
 	wg := sync.WaitGroup{}
-	wg.Add(5)
+	wg.Add(6)
 	go func() {
 		defer wg.Done()
 		initNoteLikesMQConn()
@@ -38,6 +39,10 @@ func InitKafkaConn() {
 	go func() {
 		defer wg.Done()
 		initDelNoteMQConn()
+	}()
+	go func() {
+		defer wg.Done()
+		initSyncMessageMQConn()
 	}()
 	wg.Wait()
 }
@@ -90,4 +95,14 @@ func initDelNoteMQConn() {
 		log.Fatal("failed to dial leader:", err)
 	}
 	DelNotesMQConn = conn
+}
+
+// 同步聊天消息的连接
+func initSyncMessageMQConn() {
+	conn, err := kafka.DialLeader(context.Background(), config.AC.Kafka.Network, config.AC.Kafka.Host+":"+config.AC.Kafka.Port, config.AC.Kafka.SyncMessages.Topic, 0)
+	if err != nil {
+		// 加入重试机制
+		log.Fatal("failed to dial leader:", err)
+	}
+	SyncMessagesMQConn = conn
 }

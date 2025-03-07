@@ -45,7 +45,7 @@ mongo:
   host: localhost
   port: 8088
   username: root
-  password: 123
+  password: hanser
 kafka:
   network: "tcp"
   host: localhost
@@ -69,6 +69,10 @@ kafka:
   # 删除笔记
   delNotes:
     topic: "del_notes"
+    partition: 10
+  # 同步聊天记录
+  syncMessages:
+    topic: "sync_messages"
     partition: 10
 oss:
   avatarBucket: "note-app-oss-avatar"

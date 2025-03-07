@@ -8,16 +8,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"net/http"
 	"note_app_server/global"
 	"note_app_server/model/appModel"
 	"note_app_server/model/msgModel"
 	"note_app_server/model/userModel"
+	"note_app_server/producer"
 	"note_app_server/response"
 	"strconv"
 	"sync"
-	"time"
 )
 
 type Msg msgModel.Message
@@ -93,6 +94,7 @@ func InitWS(ctx *gin.Context) {
 
 // 处理连接
 func connectionProc(conn *websocket.Conn, uid uint) {
+	ctx := context.TODO()
 	defer conn.Close()
 	// 已存在连接
 	if getConn(uid) != nil {
@@ -102,20 +104,7 @@ func connectionProc(conn *websocket.Conn, uid uint) {
 	addConn(uid, conn)
 
 	// 处理待发送消息
-	go func() {
-		result := global.MsgRdb.LRange(context.TODO(), strconv.Itoa(int(uid)), 0, -1)
-		strings, err := result.Result()
-		if err != nil {
-			return
-		}
-		for _, i := range strings {
-			rawMsg := Msg{}
-			if err = rawMsg.ParseMsg([]byte(i)); err == nil {
-				messageQueue <- Message{Conn: conn, Msg: rawMsg}
-			}
-		}
-		global.MsgRdb.LPop(context.TODO(), strconv.Itoa(int(uid)))
-	}()
+	go rePushMsg(uid, conn, ctx)
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -142,7 +131,6 @@ func connectionProc(conn *websocket.Conn, uid uint) {
 // 私聊消息
 func privateMsgProc(msg *Msg) {
 	conn := getConn(msg.ToId)
-	var ctx = context.Background()
 	if conn != nil {
 		messageQueue <- Message{Conn: conn, Msg: *msg}
 		msg.Read = true
@@ -158,16 +146,22 @@ func privateMsgProc(msg *Msg) {
 		// 数据可视化
 		// 可以加入到数据分析系统
 	}
-	fromToTarget := fmt.Sprintf("%d-%d", msg.FromId, msg.ToId)
-	targetToFrom := fmt.Sprintf("%d-%d", msg.ToId, msg.FromId)
-
-	key := fromToTarget
-	if fromToTarget > targetToFrom {
-		key = targetToFrom
+	// 存储id格式遵循小id在前，大id在后
+	var firstKey uint
+	var secondKey uint
+	if msg.FromId < msg.ToId {
+		firstKey = msg.FromId
+		secondKey = msg.ToId
+	} else {
+		firstKey = msg.ToId
+		secondKey = msg.FromId
 	}
 
-	global.MsgRdb.LPush(ctx, key, msg.EncodeMessage())
-	global.MsgRdb.Expire(ctx, key, 24*time.Hour)
+	// 存入mongoDB持久化存储
+	err := producer.SyncMessageToMongo(firstKey, secondKey, (*msgModel.Message)(msg))
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 // 群发消息
@@ -226,4 +220,38 @@ func verifyToken(token string) (uint, bool) {
 	}
 
 	return uid, true
+}
+
+// 重新推送用户不在线时收到的数据
+func rePushMsg(uid uint, conn *websocket.Conn, ctx context.Context) {
+	mongoConn := global.MongoClient.Database("pending_message").Collection("msgs")
+
+	filter := bson.D{
+		{
+			Key: "$or",
+			Value: bson.A{
+				bson.D{
+					{Key: "uid1", Value: uid},
+				},
+				bson.D{
+					{Key: "uid2", Value: uid},
+				},
+			},
+		},
+	}
+
+	cursor, err := mongoConn.Find(ctx, filter)
+	if err != nil {
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var results []Msg
+	if err = cursor.All(ctx, &results); err != nil {
+		log.Println(err)
+	}
+
+	for _, i := range results {
+		messageQueue <- Message{Conn: conn, Msg: i}
+	}
 }

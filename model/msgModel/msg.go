@@ -10,6 +10,7 @@ type Message struct {
 	FromName   string    `json:"from_name"`   // 发送者名称
 	FromAvatar string    `json:"from_avatar"` // 发送者头像
 	ToId       uint      `json:"to_id"`       //接受者
+	ToName     string    `json:"to_name"`     // 接受者名称
 	Type       int       `json:"type"`        // 消息类型 群聊 私聊
 	Content    string    `json:"content"`     // 消息内容
 	MediaType  int       `json:"media_type"`  // 媒体类型 文字 图片 视频

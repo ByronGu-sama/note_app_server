@@ -10,4 +10,5 @@ const (
 	DislikeComment = "dislikeComment" // 取消点赞评论
 	SyncNote       = "syncNote"       // 同步笔记
 	DelNote        = "delNote"        // 删除笔记
+	SyncMessage    = "syncMessage"    // 同步聊天记录
 )
