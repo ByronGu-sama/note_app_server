@@ -70,9 +70,13 @@ func SetupRouter() *gin.Engine {
 				})
 			}
 
-			verification.GET("/:nid", func(ctx *gin.Context) {
-				controller.GetNote(ctx)
-			})
+			countHeat := note.Group("").Use(middleware.NoteTrendingMiddleware())
+			{
+				countHeat.GET("/:nid", func(ctx *gin.Context) {
+					controller.GetNote(ctx)
+				})
+			}
+
 			verification.PUT("", func(ctx *gin.Context) {
 				controller.EditNote(ctx)
 			})

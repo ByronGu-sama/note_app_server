@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -221,10 +222,27 @@ func GetNote(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "缺少关键信息")
 		return
 	}
-	note, err := repository.GetNoteWithNid(nid)
+
+	var note *noteModel.NoteDetail
+
+	// 如果未缓存则从数据库取数据
+	result, err := global.NoteBufDB.Get(ctx, nid).Result()
 	if err != nil {
-		response.RespondWithStatusBadRequest(ctx, "无相关信息")
-		return
+		log.Println(err)
+		note, err = repository.GetNoteWithNid(nid)
+		if err != nil {
+			response.RespondWithStatusInternalServerError(ctx, "服务器内部错误")
+			return
+		}
+	} else {
+		if err = json.Unmarshal([]byte(result), &note); err != nil {
+			log.Println(err)
+			note, err = repository.GetNoteWithNid(nid)
+			if err != nil {
+				response.RespondWithStatusBadRequest(ctx, "服务器内部错误")
+				return
+			}
+		}
 	}
 
 	rawPicsList := strings.Split(note.Pics, ";")

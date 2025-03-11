@@ -2,6 +2,7 @@ app:
   name: note_app_server
   host: localhost
   port: :8081
+  noteTrendingThreshold: 3 # 笔记缓存需达到的热度阈值
 mysql:
   #  url
   dsn: "root:123@tcp(localhost:8077)/note_app_db?charset=utf8mb4&parseTime=True&loc=Local"
@@ -18,8 +19,10 @@ redis:
   captchaDB: 1
   # 私聊消息缓存
   msgDB: 2
-  # 私聊历史消息缓存
-  msgHistoryDB: 3
+  # 笔记热度统计
+  noteTrendingDB: 3
+  # 笔记缓存
+  noteBufDB: 4
   # redis服务器地址（默认为localhost）
   host: localhost
   # redis端口（默认为6379）

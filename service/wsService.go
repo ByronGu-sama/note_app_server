@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"net/http"
 	"note_app_server/global"
@@ -240,7 +241,9 @@ func rePushMsg(uid uint, conn *websocket.Conn, ctx context.Context) {
 		},
 	}
 
-	cursor, err := mongoConn.Find(ctx, filter)
+	option := options.Find().SetSort(bson.D{{Key: "pubTime", Value: 1}})
+
+	cursor, err := mongoConn.Find(ctx, filter, option)
 	if err != nil {
 		return
 	}

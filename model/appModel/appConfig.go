@@ -4,9 +4,10 @@ import "time"
 
 type AppConfig struct {
 	App struct {
-		Name string
-		Host string
-		Port string
+		Name                  string
+		Host                  string
+		Port                  string
+		NoteTrendingThreshold int
 	}
 	Mysql struct {
 		Dsn             string
@@ -15,15 +16,16 @@ type AppConfig struct {
 		ConnMaxLifetime string
 	}
 	Redis struct {
-		TokenDB      int
-		CaptchaDB    int
-		MsgDB        int
-		MsgHistoryDB int
-		Host         string
-		Port         string
-		Password     string
-		Timeout      time.Duration
-		Pool         struct {
+		TokenDB        int
+		CaptchaDB      int
+		MsgDB          int
+		NoteTrendingDB int
+		NoteBufDB      int
+		Host           string
+		Port           string
+		Password       string
+		Timeout        time.Duration
+		Pool           struct {
 			MaxActive int
 			MaxIdle   int
 			MinIdle   int
