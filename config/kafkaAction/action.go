@@ -11,4 +11,5 @@ const (
 	SyncNote       = "syncNote"       // 同步笔记
 	DelNote        = "delNote"        // 删除笔记
 	SyncMessage    = "syncMessage"    // 同步聊天记录
+
 )

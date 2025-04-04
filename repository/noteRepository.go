@@ -174,3 +174,15 @@ func GetNoteListWithKeyword(index, keyword string, offset, limit *int) ([]noteMo
 	}
 	return result, nil
 }
+
+// SetNoteCheckStatus 修改笔记审核结果
+func SetNoteCheckStatus(uid uint, nid string, status int) error {
+	if status < 0 || status > 2 {
+		return errors.New("status exceeded range 0~3")
+	}
+	sql := `update notes set checked = ? where nid = ? and uid = ?`
+	if err := global.Db.Raw(sql, status, nid, uid).Error; err != nil {
+		return err
+	}
+	return nil
+}

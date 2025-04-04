@@ -140,43 +140,73 @@ func NewNote(ctx *gin.Context) {
 	tx := global.Db.Begin()
 	if err := tx.Create(&n).Error; err != nil {
 		tx.Rollback()
+		_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, noteId)
 		response.RespondWithStatusBadRequest(ctx, "创建失败")
 		return
 	}
 	userCreation := &userModel.UserCreationInfo{}
 	if err := tx.Model(userCreation).Where("uid = ?", uid).Update("noteCount", gorm.Expr("noteCount + ?", 1)).Error; err != nil {
 		tx.Rollback()
+		_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, noteId)
+		response.RespondWithStatusBadRequest(ctx, "更新失败")
+		return
+	}
+	checkInfo := &noteModel.NoteCheck{Nid: noteId, Checked: 0, AuditStatus: 0}
+	if err := tx.Create(&checkInfo).Error; err != nil {
+		tx.Rollback()
+		_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, noteId)
 		response.RespondWithStatusBadRequest(ctx, "创建失败")
 		return
 	}
 	tx.Commit()
 	response.RespondWithStatusOK(ctx, "创建成功")
 
-	tempUsername, _ := ctx.Get("username")
-	username := tempUsername.(string)
-	tempAvatarUrl, _ := ctx.Get("avatarUrl")
-	avatarUrl := tempAvatarUrl.(string)
+	go func() {
+		tempUsername, _ := ctx.Get("username")
+		username := tempUsername.(string)
+		tempAvatarUrl, _ := ctx.Get("avatarUrl")
+		avatarUrl := tempAvatarUrl.(string)
 
-	esNote := &noteModel.ESNote{
-		Nid:         noteId,
-		Uid:         uid,
-		Username:    username,
-		AvatarUrl:   avatarUrl,
-		Cover:       cover,
-		CoverHeight: coverHeight,
-		Pics:        picsNameList[:len(picsNameList)-1],
-		Title:       title,
-		Content:     content,
-		LikesCount:  0,
-		CreatedAt:   curTime,
-		UpdatedAt:   curTime,
-		Public:      true,
-		CategoryId:  1,
-		Tags:        tags,
-		Status:      1,
-	}
+		esNote := &noteModel.ESNote{
+			Nid:         noteId,
+			Uid:         uid,
+			Username:    username,
+			AvatarUrl:   avatarUrl,
+			Cover:       cover,
+			CoverHeight: coverHeight,
+			Pics:        picsNameList[:len(picsNameList)-1],
+			Title:       title,
+			Content:     content,
+			LikesCount:  0,
+			CreatedAt:   curTime,
+			UpdatedAt:   curTime,
+			Public:      true,
+			CategoryId:  1,
+			Tags:        tags,
+			Status:      1,
+		}
 
-	producer.SyncToES(esNote)
+		result := service.CheckNoteContent(esNote)
+		switch result {
+		case 1:
+			// 通过
+			err := producer.SyncToES(esNote)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = repository.SetNoteCheckStatus(esNote.Uid, esNote.Nid, 1)
+			if err != nil {
+				log.Fatal(err)
+			}
+		case 2:
+			// 人工审查
+			_ = repository.SetNoteCheckStatus(esNote.Uid, esNote.Nid, 2)
+		case 3:
+			// 删除笔记
+			_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, esNote.Nid)
+			_ = repository.DeleteNoteWithUid(esNote.Nid, esNote.Uid)
+		}
+	}()
 }
 
 // DelNote 删除笔记

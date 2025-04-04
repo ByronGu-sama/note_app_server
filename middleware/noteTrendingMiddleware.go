@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"log"
@@ -10,7 +9,6 @@ import (
 	"note_app_server/global"
 	"note_app_server/repository"
 	"note_app_server/response"
-	"strconv"
 	"time"
 )
 
@@ -25,35 +23,50 @@ func NoteTrendingMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 增加热度
-		if val, err := global.NoteTrendingDB.Get(ctx, nid).Result(); errors.Is(err, redis.Nil) {
+		var incrWithTimeoutLuaScript = redis.NewScript(`
+			if redis.call('EXISTS', KEYS[1]) == 0 then
+				redis.call('SET', KEYS[1], 1)
+				redis.call('EXPIRE', KEYS[1], ARGV[1])
+				return 1
+			else
+				return redis.call('INCR', KEYS[1])
+			end
+		`)
+
+		keys := []string{nid}
+		args := []interface{}{30 * 60}
+
+		result, err := incrWithTimeoutLuaScript.Run(ctx, global.NoteTrendingDB, keys, args).Result()
+		if err != nil {
+			for _ = range 3 {
+				_, err = incrWithTimeoutLuaScript.Run(ctx, global.NoteTrendingDB, keys, args).Result()
+				if err == nil {
+					break
+				}
+			}
+			if err != nil {
+				log.Println(err)
+			}
+		}
+		if err == nil && result.(int64) >= int64(config.AC.App.NoteTrendingThreshold) {
+			// 重置热度
 			global.NoteTrendingDB.Set(ctx, nid, 1, 30*time.Minute)
-		} else {
-			global.NoteTrendingDB.IncrBy(ctx, nid, 1)
-			if i, err1 := strconv.Atoi(val); err1 != nil {
-				log.Fatal(err1)
-			} else {
-				// 超过阈值
-				if i > config.AC.App.NoteTrendingThreshold {
-					// 重置热度
-					global.NoteTrendingDB.Set(ctx, nid, 1, 30*time.Minute)
-					// 缓存笔记数据
-					if _, err = global.NoteBufDB.Get(ctx, nid).Result(); errors.Is(err, redis.Nil) {
-						result, err2 := repository.GetNoteWithNid(nid)
-						if err2 != nil {
-							log.Fatal(err2)
-						} else {
-							bi, err3 := json.Marshal(result)
-							if err3 != nil {
-								log.Fatal(err3)
-							} else {
-								global.NoteBufDB.Set(ctx, nid, bi, time.Hour)
-							}
-						}
+			// 缓存笔记数据
+			if _, err = global.NoteBufDB.Get(ctx, nid).Result(); err != nil {
+				result, err2 := repository.GetNoteWithNid(nid)
+				if err2 != nil {
+					log.Fatal(err2)
+				} else {
+					bi, err3 := json.Marshal(result)
+					if err3 != nil {
+						log.Fatal(err3)
 					} else {
-						global.NoteBufDB.Expire(ctx, nid, time.Hour)
+						global.NoteBufDB.Set(ctx, nid, bi, time.Hour)
 					}
 				}
+			} else {
+				// 已有缓存时重置过期时间
+				global.NoteBufDB.Expire(ctx, nid, time.Hour)
 			}
 		}
 		ctx.Next()

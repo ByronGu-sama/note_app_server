@@ -107,3 +107,23 @@ func GetSubCommentsList(nid, rootId string, page, limit int) ([]commentModel.Com
 	}
 	return commentsList, nil
 }
+
+// DeleteComment 删除评论
+func DeleteComment(nid, cid string, uid uint) error {
+	tx := global.Db.Begin()
+	if err := tx.Delete(&commentModel.CommentDetail{Cid: cid, Uid: uid}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	result := tx.Model(&noteModel.NoteInfo{}).Where("nid = ?", nid).UpdateColumn("comments_count", gorm.Expr("comments_count - ?", 1))
+	if result.Error != nil {
+		tx.Rollback()
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		tx.Rollback()
+		return errors.New("更新数据失败")
+	}
+	tx.Commit()
+	return nil
+}

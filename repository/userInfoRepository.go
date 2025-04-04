@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"errors"
+	"log"
 	"note_app_server/global"
 	"note_app_server/model/userModel"
 	"note_app_server/service"
@@ -70,16 +70,15 @@ func UpdateUserInfo(info *userModel.UserInfo) error {
 			return err
 		}
 	}
-	result := tx.Model(userInfo).Where("uid = ?", info.Uid).Update("updateAt", time.Now().Format("2006-01-02 15:04:05"))
+	tx.Commit()
+
+	result := global.Db.Model(userInfo).Where("uid = ?", info.Uid).Update("updateAt", time.Now().Format("2006-01-02 15:04:05"))
 	if result.RowsAffected == 0 {
-		tx.Rollback()
-		return errors.New("更新时间失败")
+		log.Println("更新时间失败")
 	}
 	if result.Error != nil {
-		tx.Rollback()
-		return result.Error
+		log.Println(result.Error)
 	}
-	tx.Commit()
 	return nil
 }
 

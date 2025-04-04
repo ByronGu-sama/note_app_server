@@ -27,7 +27,7 @@ func InitAppConfig() {
 	}
 
 	once.Do(func() {
-		wg.Add(7)
+		wg.Add(8)
 		go func() {
 			defer wg.Done()
 			InitMysqlConfig()
@@ -55,6 +55,10 @@ func InitAppConfig() {
 		go func() {
 			defer wg.Done()
 			InitJWTConfig()
+		}()
+		go func() {
+			defer wg.Done()
+			InitContentCheckConfig()
 		}()
 	})
 	wg.Wait()

@@ -9,6 +9,7 @@ import (
 	"note_app_server/producer"
 	"note_app_server/repository"
 	"note_app_server/response"
+	"note_app_server/service"
 	"note_app_server/utils"
 	"strconv"
 	"time"
@@ -52,6 +53,14 @@ func NewComment(ctx *gin.Context) {
 		"message": "获取成功",
 		"data":    result,
 	})
+
+	go func() {
+		code := service.CheckCommentContent(cmt)
+		switch code {
+		case 2:
+			_ = repository.DeleteComment(cmt.Nid, cid, uid.(uint))
+		}
+	}()
 }
 
 // DelComment 删除评论
