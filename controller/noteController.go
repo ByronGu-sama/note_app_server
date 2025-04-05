@@ -40,11 +40,11 @@ func NewNote(ctx *gin.Context) {
 	}
 
 	tempUid, ok := ctx.Get("uid")
-	uid := tempUid.(uint)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
 	}
+	uid := tempUid.(uint)
 
 	noteId := utils.EncodeWithMD5(fmt.Sprintf("%d-%d-%d", time.Now().Unix(), uid, rand.Int64()))
 
@@ -73,7 +73,7 @@ func NewNote(ctx *gin.Context) {
 		}
 
 		// 判断文件类型
-		fileType := utils.DetectFileType(tempFile)
+		fileType, _ := utils.DetectFileType(tempFile)
 
 		// 获取封面高度
 		if index == 0 {
@@ -113,11 +113,7 @@ func NewNote(ctx *gin.Context) {
 			picsNameList += fileName + ";"
 		}
 
-		err := openFile.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-		openFile.Close()
+		_ = openFile.Close()
 	}
 
 	curTime := time.Now()
@@ -137,36 +133,33 @@ func NewNote(ctx *gin.Context) {
 		Public:      1,
 	}
 
+	var newNoteErr error
+
 	tx := global.Db.Begin()
-	if err := tx.Create(&n).Error; err != nil {
+	if newNoteErr = tx.Create(&n).Error; newNoteErr != nil {
 		tx.Rollback()
-		_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, noteId)
-		response.RespondWithStatusBadRequest(ctx, "创建失败")
-		return
 	}
 	userCreation := &userModel.UserCreationInfo{}
-	if err := tx.Model(userCreation).Where("uid = ?", uid).Update("noteCount", gorm.Expr("noteCount + ?", 1)).Error; err != nil {
+	if newNoteErr = tx.Model(userCreation).Where("uid = ?", uid).Update("noteCount", gorm.Expr("noteCount + ?", 1)).Error; newNoteErr != nil {
 		tx.Rollback()
-		_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, noteId)
-		response.RespondWithStatusBadRequest(ctx, "更新失败")
-		return
 	}
 	checkInfo := &noteModel.NoteCheck{Nid: noteId, Checked: 0, AuditStatus: 0}
-	if err := tx.Create(&checkInfo).Error; err != nil {
+	if newNoteErr = tx.Create(&checkInfo).Error; newNoteErr != nil {
 		tx.Rollback()
-		_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, noteId)
-		response.RespondWithStatusBadRequest(ctx, "创建失败")
-		return
 	}
 	tx.Commit()
-	response.RespondWithStatusOK(ctx, "创建成功")
 
-	go func() {
-		tempUsername, _ := ctx.Get("username")
-		username := tempUsername.(string)
-		tempAvatarUrl, _ := ctx.Get("avatarUrl")
-		avatarUrl := tempAvatarUrl.(string)
+	if newNoteErr != nil {
+		response.RespondWithStatusBadRequest(ctx, "创建失败")
+		go func() {
+			_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, noteId)
+		}()
+	} else {
+		response.RespondWithStatusOK(ctx, "创建成功")
+	}
 
+	var otherEvent func(string, string)
+	otherEvent = func(username string, avatarUrl string) {
 		esNote := &noteModel.ESNote{
 			Nid:         noteId,
 			Uid:         uid,
@@ -206,7 +199,14 @@ func NewNote(ctx *gin.Context) {
 			_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, esNote.Nid)
 			_ = repository.DeleteNoteWithUid(esNote.Nid, esNote.Uid)
 		}
-	}()
+	}
+
+	tempUsername, _ := ctx.Get("username")
+	username := tempUsername.(string)
+	tempAvatarUrl, _ := ctx.Get("avatarUrl")
+	avatarUrl := tempAvatarUrl.(string)
+
+	go otherEvent(username, avatarUrl)
 }
 
 // DelNote 删除笔记
@@ -237,12 +237,17 @@ func EditNote(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
 	}
+	global.NoteBufDB.Del(ctx, note.Nid)
 	note.Uid = uid
 	if err := repository.UpdateNoteWithUid(&note); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "更新失败")
 		return
 	}
 	response.RespondWithStatusOK(ctx, "更新成功")
+	go func() {
+		time.Sleep(3 * time.Second)
+		global.NoteBufDB.Del(ctx, note.Nid)
+	}()
 }
 
 // GetNote 获取笔记
@@ -281,6 +286,20 @@ func GetNote(ctx *gin.Context) {
 		picsList = append(picsList, utils.AddNotePicPrefix(nid, pic))
 	}
 
+	// 查询用户是否点赞过该笔记
+	tempUid, _ := ctx.Get("uid")
+	uid := tempUid.(uint)
+
+	liked, err := global.UserLikedNotesRdbClient.SIsMember(ctx, strconv.Itoa(int(uid)), nid).Result()
+	if err != nil {
+		log.Println(err)
+	}
+
+	collected, err := global.UserCollectedNotesRdbClient.SIsMember(ctx, strconv.Itoa(int(uid)), nid).Result()
+	if err != nil {
+		log.Println(err)
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"code":    http.StatusOK,
 		"message": "success",
@@ -302,6 +321,8 @@ func GetNote(ctx *gin.Context) {
 			"collectionsCount": note.CollectionsCount,
 			"sharesCount":      note.SharesCount,
 			"viewsCount":       note.ViewsCount,
+			"liked":            liked,
+			"collected":        collected,
 		},
 	})
 }

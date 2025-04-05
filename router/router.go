@@ -61,22 +61,9 @@ func SetupRouter() *gin.Engine {
 		note.GET("/pic/:nid/:fileName", func(ctx *gin.Context) {
 			controller.GetNotePic(ctx)
 		})
+
 		verification := note.Group("").Use(middleware.TokenVerificationMiddleware())
 		{
-			keywordFilter := note.Group("").Use(middleware.SensitiveWordFilterMiddleware())
-			{
-				keywordFilter.GET("/search/:keyword", func(ctx *gin.Context) {
-					controller.GetNotesListWithKeyword(ctx)
-				})
-			}
-
-			countHeat := note.Group("").Use(middleware.NoteTrendingMiddleware())
-			{
-				countHeat.GET("/:nid", func(ctx *gin.Context) {
-					controller.GetNote(ctx)
-				})
-			}
-
 			verification.PUT("", func(ctx *gin.Context) {
 				controller.EditNote(ctx)
 			})
@@ -102,10 +89,25 @@ func SetupRouter() *gin.Engine {
 				controller.CancelCollectNote(ctx)
 			})
 		}
+
+		countHeat := note.Group("").Use(middleware.TokenVerificationMiddleware()).Use(middleware.NoteTrendingMiddleware())
+		{
+			countHeat.GET("/:nid", func(ctx *gin.Context) {
+				controller.GetNote(ctx)
+			})
+		}
+
 		checkFileType := note.Group("").Use(middleware.TokenVerificationMiddleware()).Use(middleware.DetectNotePicsTypeMiddleware())
 		{
 			checkFileType.POST("", func(ctx *gin.Context) {
 				controller.NewNote(ctx)
+			})
+		}
+
+		keywordFilter := note.Group("").Use(middleware.TokenVerificationMiddleware()).Use(middleware.SensitiveWordFilterMiddleware())
+		{
+			keywordFilter.GET("/search/:keyword", func(ctx *gin.Context) {
+				controller.GetNotesListWithKeyword(ctx)
 			})
 		}
 	}

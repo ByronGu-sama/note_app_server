@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"github.com/gabriel-vasile/mimetype"
 	"image"
 	"image/color"
@@ -28,25 +29,25 @@ func EncodeWithSHA256(name string) string {
 }
 
 // DetectFileType 返回文件类型
-func DetectFileType(file []byte) string {
+func DetectFileType(file []byte) (string, error) {
 	fileType := mimetype.Detect(file).String()
-	if fileType == "image/png" {
-		fileType = "png"
-	}
-	if fileType == "image/jpeg" {
-		fileType = "jpeg"
-	}
-	if fileType == "image/webp" {
-		fileType = "webp"
-	}
-	if fileType == "image/heic" {
-		fileType = "heic"
-	}
-	if fileType == "image/heif" {
-		fileType = "heif"
-	}
+	var err error
 
-	return fileType
+	switch fileType {
+	case "image/png":
+		fileType = "png"
+	case "image/jpeg":
+		fileType = "jpeg"
+	case "image/webp":
+		fileType = "webp"
+	case "image/heic":
+		fileType = "heic"
+	case "image/heif":
+		fileType = "gif"
+	default:
+		err = errors.New("not pre defined file type")
+	}
+	return fileType, err
 }
 
 // AddAvatarPrefix 添加前端访问头像url前缀

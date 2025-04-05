@@ -73,7 +73,7 @@ func UpdateProfileBanner(ctx *gin.Context) {
 		return
 	}
 
-	fileType := utils.DetectFileType(tempFile)
+	fileType, _ := utils.DetectFileType(tempFile)
 
 	bannerName, err4 := service.UploadFileObject(config.AC.Oss.StyleBucket, "profileBanner/", openBanner, fileType)
 	if err4 != nil {

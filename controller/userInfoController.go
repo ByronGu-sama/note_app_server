@@ -140,7 +140,10 @@ func UpdateUserInfo(ctx *gin.Context) {
 		}
 
 		// 检查文件类型
-		contentType := utils.DetectFileType(all)
+		contentType, err := utils.DetectFileType(all)
+		if err != nil {
+			response.RespondWithStatusBadRequest(ctx, err.Error())
+		}
 
 		oldAvatar, err = repository.GetLastAvatarUrl(uid)
 		if err != nil {

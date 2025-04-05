@@ -23,6 +23,14 @@ redis:
   noteTrendingDB: 3
   # 笔记缓存
   noteBufDB: 4
+  # 缓存笔记的点赞数
+  thumbsUpRdb: 5
+  # 缓存用户已点赞的笔记
+  userLikedNotesRdb: 6
+  # 缓存笔记的收藏数
+  collectedCntRdb: 7
+  # 缓存用户已收藏的笔记
+  userCollectedNotesRdb: 8
   # redis服务器地址（默认为localhost）
   host: localhost
   # redis端口（默认为6379）
