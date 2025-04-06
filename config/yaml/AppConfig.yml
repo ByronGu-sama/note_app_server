@@ -48,9 +48,7 @@ mongo:
   username: root
   password: hanser
 kafka:
-  network: "tcp"
-  host: localhost
-  port: 9092
+  addr: localhost:9092
   # 点赞&取消点赞
   noteLikes:
     topic: "note_likes"

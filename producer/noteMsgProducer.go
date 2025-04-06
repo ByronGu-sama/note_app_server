@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"context"
 	"github.com/segmentio/kafka-go"
 	"log"
 	"note_app_server/config/kafkaAction"
@@ -24,16 +25,16 @@ func LikeNote(uid uint, nid string) error {
 		return err
 	}
 
-	err = connManager.NoteLikesMQConn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		log.Fatal("failed to set timeout:", err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// 发送消息
-	_, err = connManager.NoteLikesMQConn.WriteMessages(
-		kafka.Message{Value: encodedMsg},
-	)
+	err = connManager.NoteLikesWriter.WriteMessages(ctx, kafka.Message{
+		Key:   []byte(nid),
+		Value: encodedMsg,
+	})
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	return nil
@@ -53,15 +54,14 @@ func DislikeNote(uid uint, nid string) error {
 		return err
 	}
 
-	err = connManager.NoteLikesMQConn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		log.Fatal("failed to set timeout:", err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	// 发送消息
-	_, err = connManager.NoteLikesMQConn.WriteMessages(
-		kafka.Message{Value: encodedMsg},
-	)
+	err = connManager.NoteLikesWriter.WriteMessages(ctx, kafka.Message{
+		Key:   []byte(nid),
+		Value: encodedMsg,
+	})
 	if err != nil {
 		return err
 	}
@@ -82,15 +82,14 @@ func CollectNote(uid uint, nid string) error {
 		return err
 	}
 
-	err = connManager.NoteCollectsMQConn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		log.Fatal("failed to set timeout:", err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	// 发送消息
-	_, err = connManager.NoteCollectsMQConn.WriteMessages(
-		kafka.Message{Value: encodedMsg},
-	)
+	err = connManager.NoteCollectsWriter.WriteMessages(ctx, kafka.Message{
+		Key:   []byte(nid),
+		Value: encodedMsg,
+	})
 	if err != nil {
 		return err
 	}
@@ -111,15 +110,14 @@ func AbandonNote(uid uint, nid string) error {
 		return err
 	}
 
-	err = connManager.NoteCollectsMQConn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		log.Fatal("failed to set timeout:", err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	// 发送消息
-	_, err = connManager.NoteCollectsMQConn.WriteMessages(
-		kafka.Message{Value: encodedMsg},
-	)
+	err = connManager.NoteCollectsWriter.WriteMessages(ctx, kafka.Message{
+		Key:   []byte(nid),
+		Value: encodedMsg,
+	})
 	if err != nil {
 		return err
 	}
@@ -140,15 +138,14 @@ func DelComment(cid string, uid uint) error {
 		return err
 	}
 
-	err = connManager.NoteCommentsMQConn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		log.Fatal("failed to set timeout:", err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	// 发送消息
-	_, err = connManager.NoteCommentsMQConn.WriteMessages(
-		kafka.Message{Value: encodedMsg},
-	)
+	err = connManager.DelNotesWriter.WriteMessages(ctx, kafka.Message{
+		Key:   []byte(cid),
+		Value: encodedMsg,
+	})
 	if err != nil {
 		return err
 	}
@@ -169,15 +166,14 @@ func LikeNoteComment(uid uint, cid string) error {
 		return err
 	}
 
-	err = connManager.NoteCommentsMQConn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		log.Fatal("failed to set timeout:", err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	// 发送消息
-	_, err = connManager.NoteCommentsMQConn.WriteMessages(
-		kafka.Message{Value: encodedMsg},
-	)
+	err = connManager.NoteCommentsWriter.WriteMessages(ctx, kafka.Message{
+		Key:   []byte(cid),
+		Value: encodedMsg,
+	})
 	if err != nil {
 		return err
 	}
@@ -198,15 +194,14 @@ func DislikeNoteComment(uid uint, cid string) error {
 		return err
 	}
 
-	err = connManager.NoteCommentsMQConn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		log.Fatal("failed to set timeout:", err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	// 发送消息
-	_, err = connManager.NoteCommentsMQConn.WriteMessages(
-		kafka.Message{Value: encodedMsg},
-	)
+	err = connManager.NoteCommentsWriter.WriteMessages(ctx, kafka.Message{
+		Key:   []byte(cid),
+		Value: encodedMsg,
+	})
 	if err != nil {
 		return err
 	}
@@ -227,15 +222,14 @@ func DelNote(uid uint, nid string) error {
 		return err
 	}
 
-	err = connManager.DelNotesMQConn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		log.Fatal("failed to set timeout:", err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	// 发送消息
-	_, err = connManager.DelNotesMQConn.WriteMessages(
-		kafka.Message{Value: encodedMsg},
-	)
+	err = connManager.DelNotesWriter.WriteMessages(ctx, kafka.Message{
+		Key:   []byte(nid),
+		Value: encodedMsg,
+	})
 	if err != nil {
 		return err
 	}
@@ -255,15 +249,14 @@ func SyncToES(note *noteModel.ESNote) error {
 		return err
 	}
 
-	err = connManager.SyncNotesMQConn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		log.Fatal("failed to set timeout:", err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	// 发送消息
-	_, err = connManager.SyncNotesMQConn.WriteMessages(
-		kafka.Message{Value: encodedMsg},
-	)
+	err = connManager.SyncNotesWriter.WriteMessages(ctx, kafka.Message{
+		Key:   []byte(note.Nid),
+		Value: encodedMsg,
+	})
 	if err != nil {
 		return err
 	}

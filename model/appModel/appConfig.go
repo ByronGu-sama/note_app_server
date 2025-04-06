@@ -42,9 +42,7 @@ type AppConfig struct {
 		Port string
 	}
 	Kafka struct {
-		Network   string
-		Host      string
-		Port      string
+		Addr      string
 		NoteLikes struct {
 			Topic      string
 			Partitions int
