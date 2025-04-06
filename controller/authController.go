@@ -103,7 +103,7 @@ func Logout(ctx *gin.Context) {
 	}
 
 	rCtx := context.Background()
-	deletedCount, err := global.TokenRdb.Del(rCtx, strconv.Itoa(int(uid))).Result()
+	deletedCount, err := global.AuthRdb.Del(rCtx, strconv.Itoa(int(uid))).Result()
 	if err != nil {
 		response.RespondWithStatusBadRequest(ctx, "退出登录失败")
 		return

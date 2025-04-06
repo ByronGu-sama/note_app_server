@@ -208,7 +208,7 @@ func verifyToken(token string) (uint, bool) {
 	}
 
 	rCtx := context.Background()
-	_, err = global.TokenRdb.Get(rCtx, strconv.Itoa(int(uid))).Result()
+	_, err = global.AuthRdb.Get(rCtx, strconv.Itoa(int(uid))).Result()
 	if errors.Is(err, redis.Nil) {
 		return 0, false
 	} else if err != nil {

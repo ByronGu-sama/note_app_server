@@ -237,7 +237,7 @@ func EditNote(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
 	}
-	global.NoteBufDB.Del(ctx, note.Nid)
+	global.BoomNoteDB.Del(ctx, note.Nid)
 	note.Uid = uid
 	if err := repository.UpdateNoteWithUid(&note); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "更新失败")
@@ -246,7 +246,7 @@ func EditNote(ctx *gin.Context) {
 	response.RespondWithStatusOK(ctx, "更新成功")
 	go func() {
 		time.Sleep(3 * time.Second)
-		global.NoteBufDB.Del(ctx, note.Nid)
+		global.BoomNoteDB.Del(ctx, note.Nid)
 	}()
 }
 
@@ -258,10 +258,12 @@ func GetNote(ctx *gin.Context) {
 		return
 	}
 
+	noteBuf := nid + ":Buf"
+
 	var note *noteModel.NoteDetail
 
 	// 如果未缓存则从数据库取数据
-	result, err := global.NoteBufDB.Get(ctx, nid).Result()
+	result, err := global.BoomNoteDB.Get(ctx, noteBuf).Result()
 	if err != nil {
 		log.Println(err)
 		note, err = repository.GetNoteWithNid(nid)
@@ -290,12 +292,15 @@ func GetNote(ctx *gin.Context) {
 	tempUid, _ := ctx.Get("uid")
 	uid := tempUid.(uint)
 
-	liked, err := global.UserLikedNotesRdbClient.SIsMember(ctx, strconv.Itoa(int(uid)), nid).Result()
+	uidLiked := strconv.Itoa(int(uid)) + ":Liked"
+	uidCollected := strconv.Itoa(int(uid)) + ":Collected"
+
+	liked, err := global.NoteNormalRdb.SIsMember(ctx, uidLiked, nid).Result()
 	if err != nil {
 		log.Println(err)
 	}
 
-	collected, err := global.UserCollectedNotesRdbClient.SIsMember(ctx, strconv.Itoa(int(uid)), nid).Result()
+	collected, err := global.NoteNormalRdb.SIsMember(ctx, uidCollected, nid).Result()
 	if err != nil {
 		log.Println(err)
 	}

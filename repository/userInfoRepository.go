@@ -19,7 +19,7 @@ func GetToken(uid uint) (string, error) {
 	}
 
 	rCtx := context.Background()
-	err = global.TokenRdb.Set(rCtx, strconv.Itoa(int(uid)), token, time.Hour*24*30).Err()
+	err = global.AuthRdb.Set(rCtx, strconv.Itoa(int(uid)), token, time.Hour*24*30).Err()
 	if err != nil {
 		return "", err
 	}

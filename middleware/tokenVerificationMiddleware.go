@@ -34,7 +34,7 @@ func TokenVerificationMiddleware() gin.HandlerFunc {
 		}
 
 		rCtx := context.Background()
-		_, err = global.TokenRdb.Get(rCtx, strconv.Itoa(int(uid))).Result()
+		_, err = global.AuthRdb.Get(rCtx, strconv.Itoa(int(uid))).Result()
 		if errors.Is(err, redis.Nil) {
 			response.RespondWithStatusBadRequest(ctx, "登陆已过期")
 			ctx.Abort()

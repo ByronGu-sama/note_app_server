@@ -23,6 +23,11 @@ func NoteTrendingMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// 笔记热度值
+		trendCnt := nid + ":Trend"
+		// 笔记数据缓存
+		noteBuf := nid + ":Buf"
+
 		var incrWithTimeoutLuaScript = redis.NewScript(`
 			if redis.call('EXISTS', KEYS[1]) == 0 then
 				redis.call('SET', KEYS[1], 1)
@@ -33,13 +38,13 @@ func NoteTrendingMiddleware() gin.HandlerFunc {
 			end
 		`)
 
-		keys := []string{nid}
+		keys := []string{trendCnt}
 		args := []interface{}{30 * 60}
 
-		result, err := incrWithTimeoutLuaScript.Run(ctx, global.NoteTrendingDB, keys, args).Result()
+		result, err := incrWithTimeoutLuaScript.Run(ctx, global.BoomNoteDB, keys, args).Result()
 		if err != nil {
 			for _ = range 3 {
-				_, err = incrWithTimeoutLuaScript.Run(ctx, global.NoteTrendingDB, keys, args).Result()
+				_, err = incrWithTimeoutLuaScript.Run(ctx, global.BoomNoteDB, keys, args).Result()
 				if err == nil {
 					break
 				}
@@ -50,9 +55,9 @@ func NoteTrendingMiddleware() gin.HandlerFunc {
 		}
 		if err == nil && result.(int64) >= int64(config.AC.App.NoteTrendingThreshold) {
 			// 重置热度
-			global.NoteTrendingDB.Set(ctx, nid, 1, 30*time.Minute)
+			global.BoomNoteDB.Set(ctx, trendCnt, 1, 30*time.Minute)
 			// 缓存笔记数据
-			if _, err = global.NoteBufDB.Get(ctx, nid).Result(); err != nil {
+			if _, err = global.BoomNoteDB.Get(ctx, noteBuf).Result(); err != nil {
 				result, err2 := repository.GetNoteWithNid(nid)
 				if err2 != nil {
 					log.Fatal(err2)
@@ -61,12 +66,12 @@ func NoteTrendingMiddleware() gin.HandlerFunc {
 					if err3 != nil {
 						log.Fatal(err3)
 					} else {
-						global.NoteBufDB.Set(ctx, nid, bi, time.Hour)
+						global.BoomNoteDB.Set(ctx, noteBuf, bi, time.Hour)
 					}
 				}
 			} else {
 				// 已有缓存时重置过期时间
-				global.NoteBufDB.Expire(ctx, nid, time.Hour)
+				global.BoomNoteDB.Expire(ctx, noteBuf, time.Hour)
 			}
 		}
 		ctx.Next()
