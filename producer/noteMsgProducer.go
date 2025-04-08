@@ -142,7 +142,7 @@ func DelComment(cid string, uid int64) error {
 	defer cancel()
 
 	// 发送消息
-	err = connManager.DelNotesWriter.WriteMessages(ctx, kafka.Message{
+	err = connManager.NoteCommentsWriter.WriteMessages(ctx, kafka.Message{
 		Key:   []byte(cid),
 		Value: encodedMsg,
 	})

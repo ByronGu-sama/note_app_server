@@ -23,6 +23,8 @@ redis:
   noteNormalRdb: 3
   # 缓存评论的点赞数/收藏数/统计刷入数据库的数据
   commentNormalRdb: 4
+  # 请求限流
+  requestLimitRdb: 15
   # redis服务器地址（默认为localhost）
   host: localhost
   # redis端口（默认为6379）

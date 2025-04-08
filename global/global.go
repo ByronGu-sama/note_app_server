@@ -16,6 +16,7 @@ var (
 	BoomNoteDB         *redis.Client              // BoomNoteDB 私聊消息历史缓存
 	NoteNormalRdb      *redis.Client              // NoteNormalRdb 缓存热点笔记
 	CommentNormalRdb   *redis.Client              // CommentNormalRdb 缓存评论相关的附加数据
+	RequestLimitRdb    *redis.Client              // RequestLimitRdb 请求限流机制
 	OssClientPool      *sync.Pool                 // OssClientPool oss客户端连接池
 	CaptchaClientPool  *sync.Pool                 // CaptchaClientPool 验证码客户端连接池
 	ESClient           *elasticsearch.TypedClient // ESClient es客户端

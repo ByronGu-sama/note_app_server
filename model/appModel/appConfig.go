@@ -21,6 +21,7 @@ type AppConfig struct {
 		MsgDB            int
 		NoteNormalRdb    int
 		CommentNormalRdb int
+		RequestLimitRdb  int
 		Host             string
 		Port             string
 		Password         string
