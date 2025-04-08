@@ -8,7 +8,7 @@ import (
 
 type Note struct {
 	Nid         string    `json:"nid" gorm:"column:nid"`
-	Uid         uint      `json:"uid" gorm:"column:uid"`
+	Uid         int64     `json:"uid" gorm:"column:uid"`
 	Cover       string    `json:"cover" gorm:"column:cover"`
 	CoverHeight float64   `json:"cover_height" gorm:"column:cover_height"`
 	Pics        string    `json:"pics" gorm:"column:pics"`
@@ -16,10 +16,10 @@ type Note struct {
 	Content     string    `json:"content" gorm:"column:content"`
 	CreatedAt   time.Time `json:"createdAt" gorm:"column:created_at"`
 	UpdatedAt   time.Time `json:"updatedAt" gorm:"column:updated_at"`
-	Public      uint      `json:"public" gorm:"column:public"`
-	CategoryId  uint      `json:"categoryId" gorm:"column:category_id"`
+	Public      int64     `json:"public" gorm:"column:public"`
+	CategoryId  int64     `json:"categoryId" gorm:"column:category_id"`
 	Tags        string    `json:"tags" gorm:"column:tags"`
-	Status      uint      `json:"status" gorm:"column:status;default:1"`
+	Status      int64     `json:"status" gorm:"column:status;default:1"`
 }
 
 func (Note) TableName() string {
@@ -28,7 +28,7 @@ func (Note) TableName() string {
 
 type ESNote struct {
 	Nid         string    `json:"nid"`
-	Uid         uint      `json:"uid"`
+	Uid         int64     `json:"uid"`
 	Username    string    `json:"username"`
 	AvatarUrl   string    `json:"avatarUrl"`
 	Cover       string    `json:"cover"`
@@ -36,13 +36,13 @@ type ESNote struct {
 	Pics        string    `json:"pics"`
 	Title       string    `json:"title"`
 	Content     string    `json:"content"`
-	LikesCount  uint      `json:"likes_count"`
+	LikesCount  int64     `json:"likes_count"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	Public      bool      `json:"public"`
-	CategoryId  uint      `json:"category_id"`
+	CategoryId  int64     `json:"category_id"`
 	Tags        string    `json:"tags"`
-	Status      uint      `json:"status"`
+	Status      int64     `json:"status"`
 }
 
 func (that *ESNote) ToRawJson() json.RawMessage {

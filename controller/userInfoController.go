@@ -27,7 +27,7 @@ func GetAvatarUrl(ctx *gin.Context) {
 	defer func(reader io.ReadCloser) {
 		err := reader.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 	}(reader)
 
@@ -44,7 +44,7 @@ func GetAvatarUrl(ctx *gin.Context) {
 // GetUserInfo 获取用户详情
 func GetUserInfo(ctx *gin.Context) {
 	tempUid, ok := ctx.Get("uid")
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
@@ -100,7 +100,7 @@ func UpdateUserInfo(ctx *gin.Context) {
 	}
 
 	tempUid, ok := ctx.Get("uid")
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
@@ -147,7 +147,7 @@ func UpdateUserInfo(ctx *gin.Context) {
 
 		oldAvatar, err = repository.GetLastAvatarUrl(uid)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 
 		// 上传文件至oss
@@ -177,7 +177,7 @@ func UpdateUserInfo(ctx *gin.Context) {
 	if err6 := repository.UpdateUserInfo(userInfo); err6 != nil {
 		if hasNewAvatar {
 			if err7 := service.DeleteObject(config.AC.Oss.AvatarBucket, "", newAvatar); err7 != nil {
-				log.Fatal(err7)
+				log.Println(err7)
 			}
 		}
 		response.RespondWithStatusBadRequest(ctx, "更新失败")
@@ -185,7 +185,7 @@ func UpdateUserInfo(ctx *gin.Context) {
 	}
 	if hasNewAvatar {
 		if err8 := service.DeleteObject(config.AC.Oss.AvatarBucket, "", oldAvatar); err8 != nil {
-			log.Fatal(err8)
+			log.Println(err8)
 		}
 	}
 
@@ -195,7 +195,7 @@ func UpdateUserInfo(ctx *gin.Context) {
 // GetUserFollows 获取用户关注列表
 func GetUserFollows(ctx *gin.Context) {
 	tempUid, ok := ctx.Get("uid")
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
@@ -218,7 +218,7 @@ func GetUserFollows(ctx *gin.Context) {
 // GetUserFollowers 获取用户粉丝列表
 func GetUserFollowers(ctx *gin.Context) {
 	tempUid, ok := ctx.Get("uid")
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return

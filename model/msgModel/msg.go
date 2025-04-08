@@ -6,10 +6,10 @@ import (
 
 // Message 消息结构体
 type Message struct {
-	FromId     uint      `json:"from_id"`     // 发送者
+	FromId     int64     `json:"from_id"`     // 发送者
 	FromName   string    `json:"from_name"`   // 发送者名称
 	FromAvatar string    `json:"from_avatar"` // 发送者头像
-	ToId       uint      `json:"to_id"`       //接受者
+	ToId       int64     `json:"to_id"`       //接受者
 	ToName     string    `json:"to_name"`     // 接受者名称
 	Type       int       `json:"type"`        // 消息类型 群聊 私聊
 	Content    string    `json:"content"`     // 消息内容

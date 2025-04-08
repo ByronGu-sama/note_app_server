@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func SyncMessageToMongo(firstKey, secondKey uint, message *msgModel.Message) error {
+func SyncMessageToMongo(firstKey, secondKey int64, message *msgModel.Message) error {
 	msg := &mqMessageModel.SyncMessageMsg{
 		Action:    kafkaAction.SyncMessage,
 		FirstKey:  firstKey,

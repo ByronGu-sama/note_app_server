@@ -104,7 +104,7 @@ func SetupRouter() *gin.Engine {
 			})
 		}
 
-		keywordFilter := note.Group("").Use(middleware.TokenVerificationMiddleware()).Use(middleware.SensitiveWordFilterMiddleware())
+		keywordFilter := note.Group("").Use(middleware.TokenVerificationMiddleware())
 		{
 			keywordFilter.GET("/search/:keyword", func(ctx *gin.Context) {
 				controller.GetNotesListWithKeyword(ctx)

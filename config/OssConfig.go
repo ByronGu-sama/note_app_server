@@ -15,12 +15,12 @@ func InitOssConfig() {
 	region := AC.Oss.Region
 
 	if endPoint == "" || avatarBucket == "" || notePicsBucket == "" {
-		log.Fatal("Please set yourEndpoint and bucketName.")
+		log.Println("Please set yourEndpoint and bucketName.")
 	}
 
 	provider, err := oss.NewEnvironmentVariableCredentialsProvider()
 	if err != nil {
-		log.Fatal("new oss environment variable failed.")
+		log.Println("new oss environment variable failed.")
 	}
 
 	var pool = &sync.Pool{
@@ -33,7 +33,7 @@ func InitOssConfig() {
 			clientOptions = append(clientOptions, oss.AuthVersion(oss.AuthV4))
 			client, err := oss.New(endPoint, "", "", clientOptions...)
 			if err != nil {
-				log.Fatal("new oss client failed.")
+				log.Println("new oss client failed.")
 			}
 			return client
 		},

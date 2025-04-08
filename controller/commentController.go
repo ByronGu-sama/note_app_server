@@ -5,11 +5,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"math/rand/v2"
 	"net/http"
+	"note_app_server/global"
 	"note_app_server/model/commentModel"
 	"note_app_server/producer"
 	"note_app_server/repository"
 	"note_app_server/response"
-	"note_app_server/service"
 	"note_app_server/utils"
 	"strconv"
 	"time"
@@ -35,7 +35,7 @@ func NewComment(ctx *gin.Context) {
 
 	cid := utils.EncodeWithSHA256(fmt.Sprintf("%s-%d-%d", cmt.Nid, uid, rand.Int64()))
 	cmt.Cid = cid
-	cmt.Uid = uid.(uint)
+	cmt.Uid = uid.(int64)
 	cmt.CreatedAt = time.Now()
 	if cmt.RootId == "" {
 		cmt.RootId = cid
@@ -53,14 +53,6 @@ func NewComment(ctx *gin.Context) {
 		"message": "获取成功",
 		"data":    result,
 	})
-
-	go func() {
-		code := service.CheckCommentContent(cmt)
-		switch code {
-		case 2:
-			_ = repository.DeleteComment(cmt.Nid, cid, uid.(uint))
-		}
-	}()
 }
 
 // DelComment 删除评论
@@ -76,7 +68,7 @@ func DelComment(ctx *gin.Context) {
 		return
 	}
 
-	if err := producer.DelComment(cid, uid.(uint)); err != nil {
+	if err := producer.DelComment(cid, uid.(int64)); err != nil {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return
 	}
@@ -97,7 +89,7 @@ func LikeComment(ctx *gin.Context) {
 		return
 	}
 
-	if err := producer.LikeNoteComment(uid.(uint), cid); err != nil {
+	if err := producer.LikeNoteComment(uid.(int64), cid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return
 	}
@@ -117,7 +109,7 @@ func CancelLikeComment(ctx *gin.Context) {
 		return
 	}
 
-	if err := producer.DislikeNoteComment(uid.(uint), cid); err != nil {
+	if err := producer.DislikeNoteComment(uid.(int64), cid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return
 	}
@@ -149,8 +141,15 @@ func GetCommentList(ctx *gin.Context) {
 	}
 
 	rootArr := make([]commentModel.CommentDetail, 0)
+
+	uid, _ := ctx.Get("uid")
+	trueUid := uid.(int64)
+	userLikedComment := strconv.Itoa(int(trueUid)) + ":Liked"
+
 	for _, v := range commentList {
 		v.AvatarUrl = utils.AddAvatarPrefix(v.AvatarUrl)
+		result, _ := global.CommentNormalRdb.SIsMember(ctx, userLikedComment, v.Cid).Result()
+		v.Liked = result
 		rootArr = append(rootArr, v)
 	}
 	ctx.JSON(http.StatusOK, gin.H{
@@ -186,8 +185,15 @@ func GetSubCommentList(ctx *gin.Context) {
 	}
 
 	rootArr := make([]commentModel.CommentDetail, 0)
+
+	uid, _ := ctx.Get("uid")
+	trueUid := uid.(int64)
+	userLikedComment := strconv.Itoa(int(trueUid)) + ":Liked"
+
 	for _, v := range commentList {
 		v.AvatarUrl = utils.AddAvatarPrefix(v.AvatarUrl)
+		result, _ := global.CommentNormalRdb.SIsMember(ctx, userLikedComment, v.Cid).Result()
+		v.Liked = result
 		rootArr = append(rootArr, v)
 	}
 	ctx.JSON(http.StatusOK, gin.H{

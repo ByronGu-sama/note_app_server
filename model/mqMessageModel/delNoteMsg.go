@@ -7,7 +7,7 @@ import (
 
 type DelNote struct {
 	Action    string
-	Uid       uint
+	Uid       int64
 	Nid       string
 	Timestamp time.Time
 }

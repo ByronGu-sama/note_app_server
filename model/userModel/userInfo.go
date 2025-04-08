@@ -3,7 +3,7 @@ package userModel
 import "time"
 
 type UserInfo struct {
-	Uid       uint      `json:"uid" gorm:"column:uid; default:null"`
+	Uid       int64     `json:"uid" gorm:"column:uid; default:null"`
 	Username  string    `json:"username" gorm:"column:username; default:momo"`
 	AvatarUrl string    `json:"avatarUrl" gorm:"column:avatarUrl; default:null"`
 	Birth     time.Time `json:"birth" gorm:"column:birth; default:null"`
@@ -13,7 +13,7 @@ type UserInfo struct {
 	Language  string    `json:"language" gorm:"column:language; default:null"`
 	CreateAt  time.Time `json:"createAt" gorm:"column:createAt; default:null"`
 	UpdateAt  time.Time `json:"updateAt" gorm:"column:updateAt; default:null"`
-	UserRole  uint      `json:"userRole" gorm:"column:userRole; default:null"`
+	UserRole  int64     `json:"userRole" gorm:"column:userRole; default:null"`
 }
 
 func (UserInfo) TableName() string {
@@ -22,7 +22,7 @@ func (UserInfo) TableName() string {
 
 // FollowUser 用户关注列表&粉丝列表类型
 type FollowUser struct {
-	Uid       uint   `json:"uid" gorm:"column:uid"`
+	Uid       int64  `json:"uid" gorm:"column:uid"`
 	Username  string `json:"username" gorm:"column:username"`
 	AvatarUrl string `json:"avatarUrl" gorm:"column:avatarUrl"`
 }

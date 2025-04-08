@@ -109,7 +109,7 @@ func GetSubCommentsList(nid, rootId string, page, limit int) ([]commentModel.Com
 }
 
 // DeleteComment 删除评论
-func DeleteComment(nid, cid string, uid uint) error {
+func DeleteComment(nid, cid string, uid int64) error {
 	tx := global.Db.Begin()
 	if err := tx.Delete(&commentModel.CommentDetail{Cid: cid, Uid: uid}).Error; err != nil {
 		tx.Rollback()

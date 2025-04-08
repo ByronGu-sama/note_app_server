@@ -1,7 +1,7 @@
 package userModel
 
 type UserFollow struct {
-	Uid       uint   `json:"uid" gorm:"column:uid"`
+	Uid       int64  `json:"uid" gorm:"column:uid"`
 	TargetUid string `json:"target_uid" gorm:"column:target_uid"`
 }
 

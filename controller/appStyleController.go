@@ -25,7 +25,7 @@ func GetProfileBannerUrl(ctx *gin.Context) {
 	defer func(reader io.ReadCloser) {
 		err := reader.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 	}(reader)
 
@@ -42,7 +42,7 @@ func GetProfileBannerUrl(ctx *gin.Context) {
 // UpdateProfileBanner 更新banner
 func UpdateProfileBanner(ctx *gin.Context) {
 	tempUid, ok := ctx.Get("uid")
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
@@ -83,21 +83,21 @@ func UpdateProfileBanner(ctx *gin.Context) {
 
 	lastBanner, err5 := repository.GetLastBanner(uid)
 	if err5 != nil {
-		log.Fatal(err5)
+		log.Println(err5)
 	}
 
 	if err6 := repository.UpdateProfileBanner(uid, bannerName); err6 != nil {
 		response.RespondWithStatusInternalServerError(ctx, err6.Error())
 		err7 := service.DeleteObject(config.AC.Oss.StyleBucket, "profileBanner/", bannerName)
 		if err7 != nil {
-			log.Fatal(err7)
+			log.Println(err7)
 		}
 		return
 	}
 
 	err8 := service.DeleteObject(config.AC.Oss.StyleBucket, "profileBanner/", lastBanner)
 	if err8 != nil {
-		log.Fatal(err8)
+		log.Println(err8)
 	}
 
 	response.RespondWithStatusOK(ctx, "上传成功")
@@ -106,7 +106,7 @@ func UpdateProfileBanner(ctx *gin.Context) {
 // GetStyle 获取app风格
 func GetStyle(ctx *gin.Context) {
 	tempUid, ok := ctx.Get("uid")
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return

@@ -1,6 +1,5 @@
 package connManager
 
-import "C"
 import (
 	"github.com/segmentio/kafka-go"
 	"note_app_server/config"

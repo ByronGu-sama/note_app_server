@@ -1,7 +1,7 @@
 package styleModel
 
 type AppStyle struct {
-	Uid           uint   `json:"uid" gorm:"uid"`
+	Uid           int64  `json:"uid" gorm:"uid"`
 	ProfileBanner string `json:"profileBanner" gorm:"profile_banner"`
 }
 

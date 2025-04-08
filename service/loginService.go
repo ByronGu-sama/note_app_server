@@ -10,7 +10,7 @@ import (
 )
 
 // CheckAccountStatus 判断账户状态
-func CheckAccountStatus(status uint) error {
+func CheckAccountStatus(status int64) error {
 	if status == 0 {
 		return errors.New("account has been banned")
 	}
@@ -21,7 +21,7 @@ func CheckAccountStatus(status uint) error {
 }
 
 // GenerateJWT 用户登录后生成JWT 30天过期
-func GenerateJWT(uid uint) (string, error) {
+func GenerateJWT(uid int64) (string, error) {
 	mapClaims := jwt.MapClaims{
 		"Iss": "note_app",
 		"Sub": "token",

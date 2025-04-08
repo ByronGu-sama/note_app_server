@@ -2,7 +2,7 @@ package commentModel
 
 type CommentsInfo struct {
 	Cid        string `json:"cid" gorm:"cid"`
-	LikesCount uint   `json:"likesCount" gorm:"likes_count"`
+	LikesCount int64  `json:"likesCount" gorm:"likes_count"`
 }
 
 func (CommentsInfo) TableName() string {

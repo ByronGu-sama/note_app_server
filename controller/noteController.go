@@ -44,16 +44,24 @@ func NewNote(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
 	}
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 
 	noteId := utils.EncodeWithMD5(fmt.Sprintf("%d-%d-%d", time.Now().Unix(), uid, rand.Int64()))
 
 	var coverHeight float64
 	var cover string
-	var picsNameList string
+	var picsBuilder strings.Builder
+
 	fileList := make([]string, 0)
 
-	for index, fileHeader := range ctx.Request.MultipartForm.File["file"] {
+	// 文件内容判定
+	files, ok := ctx.Request.MultipartForm.File["file"]
+	if !ok || len(files) == 0 {
+		response.RespondWithStatusBadRequest(ctx, "至少上传一张图片")
+		return
+	}
+
+	for index, fileHeader := range files {
 		openFile, err1 := fileHeader.Open()
 		if err1 != nil {
 			response.RespondWithStatusBadRequest(ctx, err1.Error())
@@ -110,7 +118,7 @@ func NewNote(ctx *gin.Context) {
 			response.RespondWithStatusInternalServerError(ctx, err3.Error())
 			return
 		} else {
-			picsNameList += fileName + ";"
+			picsBuilder.WriteString(fileName + ";")
 		}
 
 		_ = openFile.Close()
@@ -123,7 +131,7 @@ func NewNote(ctx *gin.Context) {
 		Uid:         uid,
 		Cover:       cover,
 		CoverHeight: coverHeight,
-		Pics:        picsNameList[:len(picsNameList)-1],
+		Pics:        strings.TrimSuffix(picsBuilder.String(), ";"),
 		CategoryId:  1,
 		Tags:        tags,
 		Title:       title,
@@ -138,75 +146,61 @@ func NewNote(ctx *gin.Context) {
 	tx := global.Db.Begin()
 	if newNoteErr = tx.Create(&n).Error; newNoteErr != nil {
 		tx.Rollback()
+		response.RespondWithStatusInternalServerError(ctx, "创建失败")
+		go func() {
+			utils.SafeGo(func() {
+				_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, noteId)
+			})
+		}()
+		return
 	}
 	userCreation := &userModel.UserCreationInfo{}
 	if newNoteErr = tx.Model(userCreation).Where("uid = ?", uid).Update("noteCount", gorm.Expr("noteCount + ?", 1)).Error; newNoteErr != nil {
 		tx.Rollback()
-	}
-	checkInfo := &noteModel.NoteCheck{Nid: noteId, Checked: 0, AuditStatus: 0}
-	if newNoteErr = tx.Create(&checkInfo).Error; newNoteErr != nil {
-		tx.Rollback()
+		response.RespondWithStatusInternalServerError(ctx, "创建失败")
+		go func() {
+			utils.SafeGo(func() {
+				_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, noteId)
+			})
+		}()
+		return
 	}
 	tx.Commit()
-
-	if newNoteErr != nil {
-		response.RespondWithStatusBadRequest(ctx, "创建失败")
-		go func() {
-			_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, noteId)
-		}()
-	} else {
-		response.RespondWithStatusOK(ctx, "创建成功")
-	}
-
-	var otherEvent func(string, string)
-	otherEvent = func(username string, avatarUrl string) {
-		esNote := &noteModel.ESNote{
-			Nid:         noteId,
-			Uid:         uid,
-			Username:    username,
-			AvatarUrl:   avatarUrl,
-			Cover:       cover,
-			CoverHeight: coverHeight,
-			Pics:        picsNameList[:len(picsNameList)-1],
-			Title:       title,
-			Content:     content,
-			LikesCount:  0,
-			CreatedAt:   curTime,
-			UpdatedAt:   curTime,
-			Public:      true,
-			CategoryId:  1,
-			Tags:        tags,
-			Status:      1,
-		}
-
-		result := service.CheckNoteContent(esNote)
-		switch result {
-		case 1:
-			// 通过
-			err := producer.SyncToES(esNote)
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = repository.SetNoteCheckStatus(esNote.Uid, esNote.Nid, 1)
-			if err != nil {
-				log.Fatal(err)
-			}
-		case 2:
-			// 人工审查
-			_ = repository.SetNoteCheckStatus(esNote.Uid, esNote.Nid, 2)
-		case 3:
-			// 删除笔记
-			_ = service.DeleteDir(config.AC.Oss.NotePicsBucket, esNote.Nid)
-			_ = repository.DeleteNoteWithUid(esNote.Nid, esNote.Uid)
-		}
-	}
+	response.RespondWithStatusOK(ctx, "创建成功")
 
 	tempUsername, _ := ctx.Get("username")
 	username := tempUsername.(string)
 	tempAvatarUrl, _ := ctx.Get("avatarUrl")
 	avatarUrl := tempAvatarUrl.(string)
 
-	go otherEvent(username, avatarUrl)
+	// 同步数据至ES
+	go func(username string, avatarUrl string) {
+		utils.SafeGo(func() {
+			esNote := &noteModel.ESNote{
+				Nid:         noteId,
+				Uid:         uid,
+				Username:    username,
+				AvatarUrl:   avatarUrl,
+				Cover:       cover,
+				CoverHeight: coverHeight,
+				Pics:        strings.TrimSuffix(picsBuilder.String(), ";"),
+				Title:       title,
+				Content:     content,
+				LikesCount:  0,
+				CreatedAt:   curTime,
+				UpdatedAt:   curTime,
+				Public:      true,
+				CategoryId:  1,
+				Tags:        tags,
+				Status:      1,
+			}
+
+			err := producer.SyncToES(esNote)
+			if err != nil {
+				log.Println(err)
+			}
+		})
+	}(username, avatarUrl)
 }
 
 // DelNote 删除笔记
@@ -232,7 +226,7 @@ func EditNote(ctx *gin.Context) {
 	}
 
 	tempUid, ok := ctx.Get("uid")
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
@@ -290,7 +284,7 @@ func GetNote(ctx *gin.Context) {
 
 	// 查询用户是否点赞过该笔记
 	tempUid, _ := ctx.Get("uid")
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 
 	uidLiked := strconv.Itoa(int(uid)) + ":Liked"
 	uidCollected := strconv.Itoa(int(uid)) + ":Collected"
@@ -346,7 +340,7 @@ func GetNotePic(ctx *gin.Context) {
 	defer func(reader io.ReadCloser) {
 		err := reader.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 	}(reader)
 
@@ -490,7 +484,7 @@ func GetMyNotes(ctx *gin.Context) {
 		return
 	}
 
-	result, err3 := repository.GetNoteListWithUid(uid.(uint), page, limit)
+	result, err3 := repository.GetNoteListWithUid(uid.(int64), page, limit)
 	if err3 != nil {
 		response.RespondWithStatusBadRequest(ctx, err3.Error())
 		return
@@ -552,14 +546,14 @@ func GetNotesListWithKeyword(ctx *gin.Context) {
 	})
 }
 
-func checkUidAndNid(ctx *gin.Context) (string, uint, error) {
+func checkUidAndNid(ctx *gin.Context) (string, int64, error) {
 	nid := ctx.Param("nid")
 	if nid == "" {
 		return "", 0, errors.New("缺少必要信息")
 	}
 
 	tempUid, ok := ctx.Get("uid")
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 	if !ok {
 		return "", 0, errors.New("获取uid失败")
 	}

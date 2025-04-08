@@ -144,7 +144,7 @@ func DeleteDir(bucketName, dirName string) error {
 	for {
 		lor, err1 := bucket.ListObjects(marker, prefix)
 		if err1 != nil {
-			log.Fatal(err1)
+			log.Println(err1)
 		}
 
 		objects := make([]string, len(lor.Objects))
@@ -154,11 +154,11 @@ func DeleteDir(bucketName, dirName string) error {
 
 		delRes, err2 := bucket.DeleteObjects(objects, oss.DeleteObjectsQuiet(true))
 		if err2 != nil {
-			log.Fatalf("Failed to delete objects: %v", err)
+			log.Println("Failed to delete objects: %v", err)
 		}
 
 		if len(delRes.DeletedObjects) > 0 {
-			log.Fatalf("Some objects failed to delete: %v", delRes.DeletedObjects)
+			log.Println("Some objects failed to delete: %v", delRes.DeletedObjects)
 		}
 
 		totalDeleted += len(objects)

@@ -16,15 +16,16 @@ type AppConfig struct {
 		ConnMaxLifetime string
 	}
 	Redis struct {
-		AuthDB        int
-		BoomNoteDB    int
-		MsgDB         int
-		NoteNormalRdb int
-		Host          string
-		Port          string
-		Password      string
-		Timeout       time.Duration
-		Pool          struct {
+		AuthDB           int
+		BoomNoteDB       int
+		MsgDB            int
+		NoteNormalRdb    int
+		CommentNormalRdb int
+		Host             string
+		Port             string
+		Password         string
+		Timeout          time.Duration
+		Pool             struct {
 			MaxActive int
 			MaxIdle   int
 			MinIdle   int

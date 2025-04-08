@@ -60,11 +60,11 @@ func NoteTrendingMiddleware() gin.HandlerFunc {
 			if _, err = global.BoomNoteDB.Get(ctx, noteBuf).Result(); err != nil {
 				result, err2 := repository.GetNoteWithNid(nid)
 				if err2 != nil {
-					log.Fatal(err2)
+					log.Println(err2)
 				} else {
 					bi, err3 := json.Marshal(result)
 					if err3 != nil {
-						log.Fatal(err3)
+						log.Println(err3)
 					} else {
 						global.BoomNoteDB.Set(ctx, noteBuf, bi, time.Hour)
 					}

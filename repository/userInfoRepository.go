@@ -11,7 +11,7 @@ import (
 )
 
 // GetToken 获取用户相关的信息
-func GetToken(uid uint) (string, error) {
+func GetToken(uid int64) (string, error) {
 	// 生成jwt并保存
 	token, err := service.GenerateJWT(uid)
 	if err != nil {
@@ -28,7 +28,7 @@ func GetToken(uid uint) (string, error) {
 }
 
 // GetUserInfo 获取用户基本信息
-func GetUserInfo(uid uint) (*userModel.UserInfo, error) {
+func GetUserInfo(uid int64) (*userModel.UserInfo, error) {
 	var user *userModel.UserInfo
 	if err := global.Db.Where("uid = ?", uid).First(&user).Error; err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func GetUserInfo(uid uint) (*userModel.UserInfo, error) {
 }
 
 // GetUserCreationInfo 获取用户创作者信息
-func GetUserCreationInfo(uid uint) (*userModel.UserCreationInfo, error) {
+func GetUserCreationInfo(uid int64) (*userModel.UserCreationInfo, error) {
 	var info *userModel.UserCreationInfo
 	if err := global.Db.Where("uid = ?", uid).First(&info).Error; err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func UpdateUserInfo(info *userModel.UserInfo) error {
 }
 
 // GetLastAvatarUrl 查询旧头像地址
-func GetLastAvatarUrl(uid uint) (string, error) {
+func GetLastAvatarUrl(uid int64) (string, error) {
 	var userInfo *userModel.UserInfo
 	if err := global.Db.Where("uid = ?", uid).Select("avatarUrl").First(&userInfo).Error; err != nil {
 		return "", err
@@ -92,17 +92,17 @@ func GetLastAvatarUrl(uid uint) (string, error) {
 }
 
 // UpdateLoginFailedAt 记录上次登陆失败的时间
-func UpdateLoginFailedAt(uid uint) {
+func UpdateLoginFailedAt(uid int64) {
 	global.Db.Model(&userModel.UserLogin{}).Where("uid = ?", uid).Update("lastLoginFailedAt", time.Now())
 }
 
 // UpdateLoginSuccessAt 记录上次登陆成功的时间
-func UpdateLoginSuccessAt(uid uint) {
+func UpdateLoginSuccessAt(uid int64) {
 	global.Db.Model(&userModel.UserLogin{}).Where("uid = ?", uid).Update("lastLoginSuccessAt", time.Now())
 }
 
 // GetUserFollowers 获取粉丝列表
-func GetUserFollowers(uid uint) ([]userModel.FollowUser, error) {
+func GetUserFollowers(uid int64) ([]userModel.FollowUser, error) {
 	var userList []userModel.FollowUser
 	sql := `select
     ui.uid,
@@ -119,7 +119,7 @@ where uf.target_uid = ?`
 }
 
 // GetUserFollows 获取关注的用户
-func GetUserFollows(uid uint) ([]userModel.FollowUser, error) {
+func GetUserFollows(uid int64) ([]userModel.FollowUser, error) {
 	var userList []userModel.FollowUser
 	sql := `select 
     ui.uid,

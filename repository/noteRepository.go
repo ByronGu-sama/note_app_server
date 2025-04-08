@@ -43,7 +43,7 @@ func GetNoteWithNid(nid string) (*noteModel.NoteDetail, error) {
 }
 
 // DeleteNoteWithUid 删除笔记
-func DeleteNoteWithUid(nid string, uid uint) error {
+func DeleteNoteWithUid(nid string, uid int64) error {
 	result := global.Db.Where("nid = ? and uid = ?", nid, uid).Delete(&noteModel.Note{})
 	if result.Error != nil {
 		return result.Error
@@ -97,7 +97,7 @@ func GetNoteList(start, limit int) ([]noteModel.SurfaceNote, error) {
 }
 
 // GetNoteListWithUid 查询用户发布的帖子
-func GetNoteListWithUid(uid uint, start, limit int) ([]noteModel.SurfaceNote, error) {
+func GetNoteListWithUid(uid int64, start, limit int) ([]noteModel.SurfaceNote, error) {
 	offset := (start - 1) * limit
 	var result []noteModel.SurfaceNote
 	sql := `select n.nid as nid,
@@ -176,13 +176,13 @@ func GetNoteListWithKeyword(index, keyword string, offset, limit *int) ([]noteMo
 }
 
 // SetNoteCheckStatus 修改笔记审核结果
-func SetNoteCheckStatus(uid uint, nid string, status int) error {
-	if status < 0 || status > 2 {
-		return errors.New("status exceeded range 0~3")
-	}
-	sql := `update notes set checked = ? where nid = ? and uid = ?`
-	if err := global.Db.Raw(sql, status, nid, uid).Error; err != nil {
-		return err
-	}
-	return nil
-}
+//func SetNoteCheckStatus(uid int64, nid string, status int) error {
+//	if status < 0 || status > 2 {
+//		return errors.New("status exceeded range 0~3")
+//	}
+//	sql := `update notes set checked = ? where nid = ? and uid = ?`
+//	if err := global.Db.Raw(sql, status, nid, uid).Error; err != nil {
+//		return err
+//	}
+//	return nil
+//}

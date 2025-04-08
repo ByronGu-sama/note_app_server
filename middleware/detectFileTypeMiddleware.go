@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"note_app_server/response"
+	"note_app_server/utils"
 	"sync"
 )
 
@@ -22,35 +23,37 @@ func DetectNotePicsTypeMiddleware() gin.HandlerFunc {
 		for _, fileHeader := range c.Request.MultipartForm.File["file"] {
 			wg.Add(1)
 			go func() {
-				defer wg.Done()
-				openFile, err1 := fileHeader.Open()
-				defer openFile.Close()
+				utils.SafeGo(func() {
+					defer wg.Done()
+					openFile, err1 := fileHeader.Open()
+					defer openFile.Close()
 
-				if err1 != nil {
-					response.RespondWithStatusBadRequest(c, err1.Error())
-					c.Abort()
-					return
-				}
+					if err1 != nil {
+						response.RespondWithStatusBadRequest(c, err1.Error())
+						c.Abort()
+						return
+					}
 
-				byteData, err := io.ReadAll(openFile)
-				if err != nil {
-					response.RespondWithStatusBadRequest(c, err.Error())
-					c.Abort()
-					return
-				}
-				if _, err := (openFile).Seek(0, io.SeekStart); err != nil {
-					response.RespondWithStatusBadRequest(c, err.Error())
-					c.Abort()
-					return
-				}
+					byteData, err := io.ReadAll(openFile)
+					if err != nil {
+						response.RespondWithStatusBadRequest(c, err.Error())
+						c.Abort()
+						return
+					}
+					if _, err := (openFile).Seek(0, io.SeekStart); err != nil {
+						response.RespondWithStatusBadRequest(c, err.Error())
+						c.Abort()
+						return
+					}
 
-				fileType := mimetype.Detect(byteData)
+					fileType := mimetype.Detect(byteData)
 
-				if fileType.String() != "image/png" && fileType.String() != "image/jpeg" && fileType.String() != "image/webp" && fileType.String() != "image/heic" && fileType.String() != "image/heif" {
-					response.RespondWithStatusBadRequest(c, "不支持的文件格式:"+fileType.String())
-					c.Abort()
-					return
-				}
+					if fileType.String() != "image/png" && fileType.String() != "image/jpeg" && fileType.String() != "image/webp" && fileType.String() != "image/heic" && fileType.String() != "image/heif" {
+						response.RespondWithStatusBadRequest(c, "不支持的文件格式:"+fileType.String())
+						c.Abort()
+						return
+					}
+				})
 			}()
 		}
 		wg.Wait()

@@ -12,7 +12,7 @@ import (
 )
 
 // LikeNote 点赞笔记
-func LikeNote(uid uint, nid string) error {
+func LikeNote(uid int64, nid string) error {
 	msg := &mqMessageModel.LikeNotes{
 		Uid:       uid,
 		Nid:       nid,
@@ -41,7 +41,7 @@ func LikeNote(uid uint, nid string) error {
 }
 
 // DislikeNote 取消点赞笔记
-func DislikeNote(uid uint, nid string) error {
+func DislikeNote(uid int64, nid string) error {
 	msg := &mqMessageModel.LikeNotes{
 		Uid:       uid,
 		Nid:       nid,
@@ -69,7 +69,7 @@ func DislikeNote(uid uint, nid string) error {
 }
 
 // CollectNote 收藏笔记
-func CollectNote(uid uint, nid string) error {
+func CollectNote(uid int64, nid string) error {
 	msg := &mqMessageModel.CollectNotes{
 		Uid:       uid,
 		Nid:       nid,
@@ -97,7 +97,7 @@ func CollectNote(uid uint, nid string) error {
 }
 
 // AbandonNote 取消收藏笔记
-func AbandonNote(uid uint, nid string) error {
+func AbandonNote(uid int64, nid string) error {
 	msg := &mqMessageModel.CollectNotes{
 		Uid:       uid,
 		Nid:       nid,
@@ -125,7 +125,7 @@ func AbandonNote(uid uint, nid string) error {
 }
 
 // DelComment 删除笔记评论
-func DelComment(cid string, uid uint) error {
+func DelComment(cid string, uid int64) error {
 	msg := &mqMessageModel.DelNoteComment{
 		Cid:       cid,
 		Uid:       uid,
@@ -153,7 +153,7 @@ func DelComment(cid string, uid uint) error {
 }
 
 // LikeNoteComment 点赞笔记评论
-func LikeNoteComment(uid uint, cid string) error {
+func LikeNoteComment(uid int64, cid string) error {
 	msg := &mqMessageModel.LikeNoteComment{
 		Cid:       cid,
 		Uid:       uid,
@@ -181,7 +181,7 @@ func LikeNoteComment(uid uint, cid string) error {
 }
 
 // DislikeNoteComment 取消点赞笔记评论
-func DislikeNoteComment(uid uint, cid string) error {
+func DislikeNoteComment(uid int64, cid string) error {
 	msg := &mqMessageModel.LikeNoteComment{
 		Cid:       cid,
 		Uid:       uid,
@@ -209,7 +209,7 @@ func DislikeNoteComment(uid uint, cid string) error {
 }
 
 // DelNote 删除笔记
-func DelNote(uid uint, nid string) error {
+func DelNote(uid int64, nid string) error {
 	msg := &mqMessageModel.DelNote{
 		Nid:       nid,
 		Uid:       uid,

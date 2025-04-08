@@ -1,7 +1,7 @@
 package noteModel
 
 type LikedNotes struct {
-	Uid uint   `json:"uid" gorm:"uid"`
+	Uid int64  `json:"uid" gorm:"uid"`
 	Nid string `json:"nid" gorm:"nid"`
 }
 

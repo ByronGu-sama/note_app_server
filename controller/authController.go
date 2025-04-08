@@ -96,7 +96,7 @@ func Login(ctx *gin.Context) {
 // Logout 登出
 func Logout(ctx *gin.Context) {
 	tempUid, ok := ctx.Get("uid")
-	uid := tempUid.(uint)
+	uid := tempUid.(int64)
 	if !ok {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return

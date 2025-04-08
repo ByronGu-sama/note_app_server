@@ -18,6 +18,7 @@ import (
 	"note_app_server/model/userModel"
 	"note_app_server/producer"
 	"note_app_server/response"
+	"note_app_server/utils"
 	"strconv"
 	"sync"
 )
@@ -48,7 +49,7 @@ func (msg *Msg) EncodeMessage() []byte {
 }
 
 var (
-	users      = make(map[uint]userModel.UserInfo)
+	users      = make(map[int64]userModel.UserInfo)
 	privateMsg = make([]string, 0)
 	publicMsg  = make([]string, 0)
 	upGrader   = websocket.Upgrader{
@@ -58,7 +59,7 @@ var (
 			return true
 		},
 	}
-	websocketConn = make(map[uint]*websocket.Conn)
+	websocketConn = make(map[int64]*websocket.Conn)
 	messageQueue  = make(chan Message, 200)
 	RWLocker      = new(sync.RWMutex)
 )
@@ -80,21 +81,23 @@ func InitWS(ctx *gin.Context) {
 	}
 	// 消息处理
 	go func() {
-		for msg := range messageQueue {
-			RWLocker.Lock()
-			err = msg.Conn.WriteMessage(websocket.TextMessage, msg.Msg.EncodeMessage())
-			RWLocker.Unlock()
-			if err != nil {
-				log.Println(err)
+		utils.SafeGo(func() {
+			for msg := range messageQueue {
+				RWLocker.Lock()
+				err = msg.Conn.WriteMessage(websocket.TextMessage, msg.Msg.EncodeMessage())
+				RWLocker.Unlock()
+				if err != nil {
+					log.Println(err)
+				}
 			}
-		}
+		})
 	}()
 
 	go connectionProc(conn, uid)
 }
 
 // 处理连接
-func connectionProc(conn *websocket.Conn, uid uint) {
+func connectionProc(conn *websocket.Conn, uid int64) {
 	ctx := context.TODO()
 	defer conn.Close()
 	// 已存在连接
@@ -148,8 +151,8 @@ func privateMsgProc(msg *Msg) {
 		// 可以加入到数据分析系统
 	}
 	// 存储id格式遵循小id在前，大id在后
-	var firstKey uint
-	var secondKey uint
+	var firstKey int64
+	var secondKey int64
 	if msg.FromId < msg.ToId {
 		firstKey = msg.FromId
 		secondKey = msg.ToId
@@ -175,26 +178,26 @@ func groupMsgProc(msg *Msg) {
 }
 
 // 添加连接
-func addConn(fromId uint, conn *websocket.Conn) {
+func addConn(fromId int64, conn *websocket.Conn) {
 	RWLocker.RLock()
 	defer RWLocker.RUnlock()
 	websocketConn[fromId] = conn
 }
 
 // 删除连接
-func delConn(fromId uint) {
+func delConn(fromId int64) {
 	delete(websocketConn, fromId)
 }
 
 // 获取连接
-func getConn(uid uint) *websocket.Conn {
+func getConn(uid int64) *websocket.Conn {
 	RWLocker.RLock()
 	defer RWLocker.RUnlock()
 	return websocketConn[uid]
 }
 
 // 检查token有效性
-func verifyToken(token string) (uint, bool) {
+func verifyToken(token string) (int64, bool) {
 	temp, err := ParseJWT(token)
 	// 校验token有效性
 	if token == "" || err != nil {
@@ -224,7 +227,7 @@ func verifyToken(token string) (uint, bool) {
 }
 
 // 重新推送用户不在线时收到的数据
-func rePushMsg(uid uint, conn *websocket.Conn, ctx context.Context) {
+func rePushMsg(uid int64, conn *websocket.Conn, ctx context.Context) {
 	mongoConn := global.MongoClient.Database("pending_message").Collection("msgs")
 
 	filter := bson.D{
