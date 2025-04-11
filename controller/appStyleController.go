@@ -81,12 +81,12 @@ func UpdateProfileBanner(ctx *gin.Context) {
 		return
 	}
 
-	lastBanner, err5 := repository.GetLastBanner(uid)
+	lastBanner, err5 := repository.GetLastBanner(ctx, uid)
 	if err5 != nil {
 		log.Println(err5)
 	}
 
-	if err6 := repository.UpdateProfileBanner(uid, bannerName); err6 != nil {
+	if err6 := repository.UpdateProfileBanner(ctx, uid, bannerName); err6 != nil {
 		response.RespondWithStatusInternalServerError(ctx, err6.Error())
 		err7 := service.DeleteObject(config.AC.Oss.StyleBucket, "profileBanner/", bannerName)
 		if err7 != nil {
@@ -111,7 +111,7 @@ func GetStyle(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
 	}
-	result, err := repository.GetStyle(uid)
+	result, err := repository.GetStyle(ctx, uid)
 	if err != nil {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return

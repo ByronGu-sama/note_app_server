@@ -13,6 +13,7 @@ type SurfaceNote struct {
 	CategoryId  int64   `json:"category_id" gorm:"column:category_id"`
 	Tags        string  `json:"tags" gorm:"column:tags"`
 	LikesCount  int64   `json:"likes_count" gorm:"column:likes_count"`
+	Liked       bool    `json:"liked" gorm:"-"`
 }
 
 func (SurfaceNote) TableName() string {

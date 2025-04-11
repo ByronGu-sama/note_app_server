@@ -7,7 +7,7 @@ import (
 
 // LikeNoteComment 点赞&取消点赞
 type LikeNoteComment struct {
-	Action    string
+	Action    int
 	Cid       string
 	Uid       int64
 	Timestamp time.Time

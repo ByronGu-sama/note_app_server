@@ -58,7 +58,7 @@ func NoteTrendingMiddleware() gin.HandlerFunc {
 			global.BoomNoteDB.Set(ctx, trendCnt, 1, 30*time.Minute)
 			// 缓存笔记数据
 			if _, err = global.BoomNoteDB.Get(ctx, noteBuf).Result(); err != nil {
-				result, err2 := repository.GetNoteWithNid(nid)
+				result, err2 := repository.GetNoteWithNid(ctx, nid)
 				if err2 != nil {
 					log.Println(err2)
 				} else {

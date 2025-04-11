@@ -24,7 +24,7 @@ func Register(ctx *gin.Context) {
 	}
 
 	//检查用户名或其他唯一字段是否已存在
-	if _, err := repository.GetUserLoginInfoByPhone(user.Phone); err == nil {
+	if _, err := repository.GetUserLoginInfoByPhone(ctx, user.Phone); err == nil {
 		response.RespondWithStatusBadRequest(ctx, "该手机号已注册")
 		return
 	}
@@ -47,7 +47,7 @@ func Register(ctx *gin.Context) {
 	}
 
 	user.Password = string(hashedPassword)
-	if err = repository.RegisterUser(&user); err != nil {
+	if err = repository.RegisterUser(ctx, &user); err != nil {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return
 	}
@@ -64,7 +64,7 @@ func Login(ctx *gin.Context) {
 	}
 
 	if user.Phone != "" {
-		if existedUser, err := repository.GetUserLoginInfoByPhone(user.Phone); err != nil {
+		if existedUser, err := repository.GetUserLoginInfoByPhone(ctx, user.Phone); err != nil {
 			response.RespondWithStatusBadRequest(ctx, "用户未注册")
 			return
 		} else {
@@ -73,11 +73,11 @@ func Login(ctx *gin.Context) {
 				return
 			}
 			if err := bcrypt.CompareHashAndPassword([]byte(existedUser.Password), []byte(user.Password)); err != nil {
-				repository.UpdateLoginFailedAt(existedUser.Uid)
+				repository.UpdateLoginFailedAt(ctx, existedUser.Uid)
 				response.RespondWithStatusBadRequest(ctx, "手机号/密码错误")
 				return
 			}
-			if token, err := repository.GetToken(existedUser.Uid); err != nil {
+			if token, err := repository.GetToken(ctx, existedUser.Uid); err != nil {
 				response.RespondWithStatusBadRequest(ctx, "登陆失败")
 			} else {
 				ctx.JSON(http.StatusOK, gin.H{

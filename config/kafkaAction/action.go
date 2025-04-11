@@ -1,15 +1,14 @@
 package kafkaAction
 
 const (
-	LikeNote       = "likeNote"       // 点赞笔记
-	DislikeNote    = "dislikeNote"    // 取消点赞笔记
-	CollectNote    = "collectNote"    // 收藏笔记
-	AbandonNote    = "abandonNote"    // 取消收藏笔记
-	DelNoteComment = "delNoteComment" // 删除笔记评论
-	LikeComment    = "likeComment"    // 点赞评论
-	DislikeComment = "dislikeComment" // 取消点赞评论
-	SyncNote       = "syncNote"       // 同步笔记
-	DelNote        = "delNote"        // 删除笔记
-	SyncMessage    = "syncMessage"    // 同步聊天记录
-
+	LikeNote       = iota // 点赞笔记
+	DislikeNote           // 取消点赞笔记
+	CollectNote           // 收藏笔记
+	AbandonNote           // 取消收藏笔记
+	DelNoteComment        // 删除笔记评论
+	LikeComment           // 点赞评论
+	DislikeComment        // 取消点赞评论
+	SyncNote              // 同步帖子
+	DelNote               // 删除笔记
+	SyncMessage           // 同步聊天记录
 )

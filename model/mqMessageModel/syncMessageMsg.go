@@ -7,7 +7,7 @@ import (
 )
 
 type SyncMessageMsg struct {
-	Action    string
+	Action    int
 	FirstKey  int64
 	SecondKey int64
 	Message   *msgModel.Message

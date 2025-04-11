@@ -42,7 +42,7 @@ func NewComment(ctx *gin.Context) {
 	}
 
 	cmtInfo := &commentModel.CommentsInfo{Cid: cid, LikesCount: 0}
-	result, err := repository.NewComment(cmt, cmtInfo)
+	result, err := repository.NewComment(ctx, cmt, cmtInfo)
 
 	if err != nil {
 		response.RespondWithStatusBadRequest(ctx, "评论失败")
@@ -135,7 +135,7 @@ func GetCommentList(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "参数错误")
 		return
 	}
-	commentList, err := repository.GetNoteCommentsList(nid, truePage, trueLimit)
+	commentList, err := repository.GetNoteCommentsList(ctx, nid, truePage, trueLimit)
 	if err != nil {
 		return
 	}
@@ -179,7 +179,7 @@ func GetSubCommentList(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "参数错误")
 		return
 	}
-	commentList, err := repository.GetSubCommentsList(nid, rootId, truePage, trueLimit)
+	commentList, err := repository.GetSubCommentsList(ctx, nid, rootId, truePage, trueLimit)
 	if err != nil {
 		return
 	}

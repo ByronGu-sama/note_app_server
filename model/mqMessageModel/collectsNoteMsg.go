@@ -7,7 +7,7 @@ import (
 
 // CollectNotes 收藏&取消收藏笔记
 type CollectNotes struct {
-	Action    string
+	Action    int
 	Nid       string
 	Uid       int64
 	Timestamp time.Time

@@ -53,7 +53,7 @@ func GetUserInfo(ctx *gin.Context) {
 	var userInfo *userModel.UserInfo
 	var userCreationInfo *userModel.UserCreationInfo
 
-	if temp, err := repository.GetUserInfo(uid); err != nil {
+	if temp, err := repository.GetUserInfo(ctx, uid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
 	} else {
@@ -61,7 +61,7 @@ func GetUserInfo(ctx *gin.Context) {
 		userInfo.AvatarUrl = utils.AddAvatarPrefix(userInfo.AvatarUrl)
 	}
 
-	if temp, err := repository.GetUserCreationInfo(uid); err != nil {
+	if temp, err := repository.GetUserCreationInfo(ctx, uid); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
 	} else {
@@ -145,7 +145,7 @@ func UpdateUserInfo(ctx *gin.Context) {
 			response.RespondWithStatusBadRequest(ctx, err.Error())
 		}
 
-		oldAvatar, err = repository.GetLastAvatarUrl(uid)
+		oldAvatar, err = repository.GetLastAvatarUrl(ctx, uid)
 		if err != nil {
 			log.Println(err)
 		}
@@ -174,7 +174,7 @@ func UpdateUserInfo(ctx *gin.Context) {
 		userInfo.Signature = signature
 	}
 
-	if err6 := repository.UpdateUserInfo(userInfo); err6 != nil {
+	if err6 := repository.UpdateUserInfo(ctx, userInfo); err6 != nil {
 		if hasNewAvatar {
 			if err7 := service.DeleteObject(config.AC.Oss.AvatarBucket, "", newAvatar); err7 != nil {
 				log.Println(err7)
@@ -200,7 +200,7 @@ func GetUserFollows(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "获取用户信息失败")
 		return
 	}
-	follows, err := repository.GetUserFollows(uid)
+	follows, err := repository.GetUserFollows(ctx, uid)
 	for i := range follows {
 		follows[i].AvatarUrl = utils.AddAvatarPrefix(follows[i].AvatarUrl)
 	}
@@ -224,7 +224,7 @@ func GetUserFollowers(ctx *gin.Context) {
 		return
 	}
 
-	followers, err := repository.GetUserFollowers(uid)
+	followers, err := repository.GetUserFollowers(ctx, uid)
 	for i := range followers {
 		followers[i].AvatarUrl = utils.AddAvatarPrefix(followers[i].AvatarUrl)
 	}

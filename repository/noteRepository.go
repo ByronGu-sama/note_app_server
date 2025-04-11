@@ -12,7 +12,7 @@ import (
 )
 
 // GetNoteWithNid 获取笔记详情
-func GetNoteWithNid(nid string) (*noteModel.NoteDetail, error) {
+func GetNoteWithNid(ctx context.Context, nid string) (*noteModel.NoteDetail, error) {
 	note := new(noteModel.NoteDetail)
 	sql := `select 
     			n.nid as nid, 
@@ -36,27 +36,15 @@ func GetNoteWithNid(nid string) (*noteModel.NoteDetail, error) {
 			left join user_info u on n.uid = u.uid 
 			left join notes_info ni on ni.nid = n.nid 
 		  	where n.status = 1 and n.nid = ?`
-	if err := global.Db.Raw(sql, nid).Scan(&note).Error; err != nil {
+	if err := global.Db.WithContext(ctx).Raw(sql, nid).Scan(&note).Error; err != nil {
 		return nil, err
 	}
 	return note, nil
 }
 
-// DeleteNoteWithUid 删除笔记
-func DeleteNoteWithUid(nid string, uid int64) error {
-	result := global.Db.Where("nid = ? and uid = ?", nid, uid).Delete(&noteModel.Note{})
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return errors.New("无匹配字段")
-	}
-	return nil
-}
-
 // UpdateNoteWithUid 更新笔记
-func UpdateNoteWithUid(n *noteModel.Note) error {
-	result := global.Db.Where("nid = ? and uid = ?", n.Nid, n.Uid).Updates(&n)
+func UpdateNoteWithUid(ctx context.Context, n *noteModel.Note) error {
+	result := global.Db.WithContext(ctx).Where("nid = ? and uid = ?", n.Nid, n.Uid).Updates(&n)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -67,7 +55,7 @@ func UpdateNoteWithUid(n *noteModel.Note) error {
 }
 
 // GetNoteList 查询列表
-func GetNoteList(start, limit int) ([]noteModel.SurfaceNote, error) {
+func GetNoteList(ctx context.Context, start, limit int) ([]noteModel.SurfaceNote, error) {
 	offset := (start - 1) * limit
 	var result []noteModel.SurfaceNote
 	sql := `select 
@@ -86,7 +74,7 @@ func GetNoteList(start, limit int) ([]noteModel.SurfaceNote, error) {
 			join user_info u on n.uid = u.uid 
 			join notes_info ni on n.nid = ni.nid 
 		 	where n.status = 1 limit ?, ?`
-	res := global.Db.Model(&noteModel.SurfaceNote{}).Raw(sql, offset, limit).Scan(&result)
+	res := global.Db.WithContext(ctx).Model(&noteModel.SurfaceNote{}).Raw(sql, offset, limit).Scan(&result)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -97,7 +85,7 @@ func GetNoteList(start, limit int) ([]noteModel.SurfaceNote, error) {
 }
 
 // GetNoteListWithUid 查询用户发布的帖子
-func GetNoteListWithUid(uid int64, start, limit int) ([]noteModel.SurfaceNote, error) {
+func GetNoteListWithUid(ctx context.Context, uid int64, start, limit int) ([]noteModel.SurfaceNote, error) {
 	offset := (start - 1) * limit
 	var result []noteModel.SurfaceNote
 	sql := `select n.nid as nid,
@@ -115,7 +103,7 @@ func GetNoteListWithUid(uid int64, start, limit int) ([]noteModel.SurfaceNote, e
 		left join notes n on n.uid = u.uid 
 		left join notes_info ni on ni.nid = n.nid 
 	  	where u.uid = ? and n.status = 1 limit ?, ?`
-	res := global.Db.Model(&noteModel.SurfaceNote{}).Raw(sql, uid, offset, limit).Scan(&result)
+	res := global.Db.WithContext(ctx).Model(&noteModel.SurfaceNote{}).Raw(sql, uid, offset, limit).Scan(&result)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -126,7 +114,7 @@ func GetNoteListWithUid(uid int64, start, limit int) ([]noteModel.SurfaceNote, e
 }
 
 // GetNoteListWithKeyword 带关键词搜索帖子
-func GetNoteListWithKeyword(index, keyword string, offset, limit *int) ([]noteModel.ESNote, error) {
+func GetNoteListWithKeyword(ctx context.Context, index, keyword string, offset, limit *int) ([]noteModel.ESNote, error) {
 	analyzer := "ik_smart"
 	re, err := global.ESClient.Search().Index(index).Request(&search.Request{
 		Query: &types.Query{
@@ -158,7 +146,7 @@ func GetNoteListWithKeyword(index, keyword string, offset, limit *int) ([]noteMo
 		},
 		From: offset,
 		Size: limit,
-	}).Do(context.TODO())
+	}).Do(ctx)
 
 	if err != nil {
 		return nil, err
@@ -172,17 +160,6 @@ func GetNoteListWithKeyword(index, keyword string, offset, limit *int) ([]noteMo
 		}
 		result = append(result, note)
 	}
+
 	return result, nil
 }
-
-// SetNoteCheckStatus 修改笔记审核结果
-//func SetNoteCheckStatus(uid int64, nid string, status int) error {
-//	if status < 0 || status > 2 {
-//		return errors.New("status exceeded range 0~3")
-//	}
-//	sql := `update notes set checked = ? where nid = ? and uid = ?`
-//	if err := global.Db.Raw(sql, status, nid, uid).Error; err != nil {
-//		return err
-//	}
-//	return nil
-//}

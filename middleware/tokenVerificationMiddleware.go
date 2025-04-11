@@ -46,7 +46,7 @@ func TokenVerificationMiddleware() gin.HandlerFunc {
 		}
 
 		userInfo := &userModel.UserInfo{}
-		if userInfo, err = repository.GetUserInfo(uid); err != nil {
+		if userInfo, err = repository.GetUserInfo(ctx, uid); err != nil {
 			response.RespondWithUnauthorized(ctx, "无访问权限")
 			ctx.Abort()
 			return

@@ -233,7 +233,7 @@ func EditNote(ctx *gin.Context) {
 	}
 	global.BoomNoteDB.Del(ctx, note.Nid)
 	note.Uid = uid
-	if err := repository.UpdateNoteWithUid(&note); err != nil {
+	if err := repository.UpdateNoteWithUid(ctx, &note); err != nil {
 		response.RespondWithStatusBadRequest(ctx, "更新失败")
 		return
 	}
@@ -260,7 +260,7 @@ func GetNote(ctx *gin.Context) {
 	result, err := global.BoomNoteDB.Get(ctx, noteBuf).Result()
 	if err != nil {
 		log.Println(err)
-		note, err = repository.GetNoteWithNid(nid)
+		note, err = repository.GetNoteWithNid(ctx, nid)
 		if err != nil {
 			response.RespondWithStatusInternalServerError(ctx, "服务器内部错误")
 			return
@@ -268,7 +268,7 @@ func GetNote(ctx *gin.Context) {
 	} else {
 		if err = json.Unmarshal([]byte(result), &note); err != nil {
 			log.Println(err)
-			note, err = repository.GetNoteWithNid(nid)
+			note, err = repository.GetNoteWithNid(ctx, nid)
 			if err != nil {
 				response.RespondWithStatusBadRequest(ctx, "服务器内部错误")
 				return
@@ -286,8 +286,8 @@ func GetNote(ctx *gin.Context) {
 	tempUid, _ := ctx.Get("uid")
 	uid := tempUid.(int64)
 
-	uidLiked := strconv.Itoa(int(uid)) + ":Liked"
-	uidCollected := strconv.Itoa(int(uid)) + ":Collected"
+	uidLiked := fmt.Sprintf("%d:Liked", uid)
+	uidCollected := fmt.Sprintf("%d:Collected", uid)
 
 	liked, err := global.NoteNormalRdb.SIsMember(ctx, uidLiked, nid).Result()
 	if err != nil {
@@ -440,15 +440,24 @@ func GetNoteList(ctx *gin.Context) {
 		return
 	}
 
-	result, err3 := repository.GetNoteList(page, limit)
+	result, err3 := repository.GetNoteList(ctx, page, limit)
 	if err3 != nil {
 		response.RespondWithStatusBadRequest(ctx, err3.Error())
 		return
 	}
 
+	tempUid, _ := ctx.Get("uid")
+	uid := tempUid.(int64)
+	uidLiked := fmt.Sprintf("%d:Liked", uid)
+
 	for i := range result {
 		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl) + "?x-oss-process=style/compress_avatar"
 		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover) + "?x-oss-process=style/compress_cover"
+		liked, err := global.NoteNormalRdb.SIsMember(ctx, uidLiked, result[i].Nid).Result()
+		if err != nil {
+			log.Println(err)
+		}
+		result[i].Liked = liked
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -484,15 +493,22 @@ func GetMyNotes(ctx *gin.Context) {
 		return
 	}
 
-	result, err3 := repository.GetNoteListWithUid(uid.(int64), page, limit)
+	result, err3 := repository.GetNoteListWithUid(ctx, uid.(int64), page, limit)
 	if err3 != nil {
 		response.RespondWithStatusBadRequest(ctx, err3.Error())
 		return
 	}
 
+	uidLiked := fmt.Sprintf("%d:Liked", uid)
+
 	for i := range result {
 		result[i].AvatarUrl = utils.AddAvatarPrefix(result[i].AvatarUrl) + "?x-oss-process=style/compress_avatar"
 		result[i].Cover = utils.AddNotePicPrefix(result[i].Nid, result[i].Cover) + "?x-oss-process=style/compress_cover"
+		liked, err := global.NoteNormalRdb.SIsMember(ctx, uidLiked, result[i].Nid).Result()
+		if err != nil {
+			log.Println(err)
+		}
+		result[i].Liked = liked
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -528,7 +544,7 @@ func GetNotesListWithKeyword(ctx *gin.Context) {
 		response.RespondWithStatusBadRequest(ctx, "关键词长度错误")
 		return
 	}
-	result, err := repository.GetNoteListWithKeyword("notes", keyword, &offset, &trueLimit)
+	result, err := repository.GetNoteListWithKeyword(ctx, "notes", keyword, &offset, &trueLimit)
 	if err != nil {
 		response.RespondWithStatusBadRequest(ctx, err.Error())
 		return

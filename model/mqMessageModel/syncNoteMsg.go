@@ -7,7 +7,7 @@ import (
 )
 
 type SyncNoteMsg struct {
-	Action    string
+	Action    int
 	Note      *noteModel.ESNote
 	Timestamp time.Time
 }

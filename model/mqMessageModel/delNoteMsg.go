@@ -6,7 +6,7 @@ import (
 )
 
 type DelNote struct {
-	Action    string
+	Action    int
 	Uid       int64
 	Nid       string
 	Timestamp time.Time

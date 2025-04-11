@@ -32,3 +32,10 @@ func RespondWithStatusInternalServerError(ctx *gin.Context, msg string) {
 		"message": msg,
 	})
 }
+
+func RespondWithStatusServiceUnavailable(ctx *gin.Context, msg string) {
+	ctx.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+		"code":    http.StatusServiceUnavailable,
+		"message": msg,
+	})
+}
